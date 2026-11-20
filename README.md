@@ -49,6 +49,10 @@ Then add the new names in two places:
 
 Lines from stderr and the viewer's own notes (such as a restarted command) are marked at the right of each line.
 
+On a phone, each line puts its time and level above the message:
+
+<img src="docs/phone.png" alt="Phone: a search for failed job" width="300">
+
 ## Test
 
 The end-to-end test builds tinkerdown from source, serves a copy of this app, and drives it in Chrome. It needs Docker and Go.
