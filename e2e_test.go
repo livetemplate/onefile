@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
@@ -292,6 +293,54 @@ func TestLogViewer(t *testing.T) {
 		waitJS("the appended line", `[...document.querySelectorAll("li.src-app .msg")].some(m => m.textContent === "disk almost full")`)
 	})
 
+	pauseResumeClear := func(t *testing.T) {
+		// click holds the button down as a person does. chromedp.Click presses
+		// and releases at once, which hides a button replaced between the two:
+		// the browser then fires no click.
+		click := func(id string) {
+			t.Helper()
+			var box []float64
+			eval(`(() => { const r = document.querySelector('[data-testid="`+id+`"]').getBoundingClientRect(); return [r.x + r.width/2, r.y + r.height/2]; })()`, &box)
+			x, y := box[0], box[1]
+			if err := run(input.DispatchMouseEvent(input.MousePressed, x, y).WithButton(input.Left).WithClickCount(1)); err != nil {
+				t.Fatal(err)
+			}
+			time.Sleep(150 * time.Millisecond)
+			if err := run(input.DispatchMouseEvent(input.MouseReleased, x, y).WithButton(input.Left).WithClickCount(1)); err != nil {
+				t.Fatal(err)
+			}
+		}
+		// The buttons must survive updates, or a click spanning one is lost.
+		exec(`window.__pause = document.querySelector('[data-testid="pause"]')`)
+		var count int
+		eval(`document.querySelectorAll("ol.log li").length`, &count)
+		waitJS("more rows", fmt.Sprintf(`document.querySelectorAll("ol.log li").length > %d`, count))
+		var same bool
+		eval(`window.__pause === document.querySelector('[data-testid="pause"]')`, &same)
+		if !same {
+			t.Error("the Pause button was replaced by an update")
+		}
+		lastKey := `(() => { const l = document.querySelectorAll("ol.log li"); return l.length ? +l[l.length-1].dataset.key : 0; })()`
+		click("pause")
+		waitJS("the Resume button", `!!document.querySelector('[data-testid="resume"]')`)
+		var before, after int
+		eval(lastKey, &before)
+		time.Sleep(1500 * time.Millisecond) // the demo inputs write several lines a second
+		eval(lastKey, &after)
+		if after != before {
+			dump()
+			t.Fatalf("rows arrived while paused: last key %d -> %d", before, after)
+		}
+		click("resume")
+		waitJS("rows after resume", fmt.Sprintf(`%s > %d`, lastKey, before))
+
+		eval(lastKey, &before)
+		click("clear")
+		waitJS("old rows hidden", fmt.Sprintf(`[...document.querySelectorAll("ol.log li")].every(r => +r.dataset.key > %d)`, before))
+		waitJS("new rows after clear", fmt.Sprintf(`%s > %d`, lastKey, before))
+	}
+	t.Run("pause freezes the list, resume catches up, clear empties it", pauseResumeClear)
+
 	t.Run("follows the tail, and stops following when scrolled up", func(t *testing.T) {
 		atBottom := `(() => { const l = document.querySelector("ol.log"); return l.scrollHeight - l.scrollTop - l.clientHeight < 40; })()`
 		waitJS("enough rows to scroll", `(() => { const l = document.querySelector("ol.log"); return l.scrollHeight > l.clientHeight + 200; })()`)
@@ -326,6 +375,8 @@ func TestLogViewer(t *testing.T) {
 		shot("desktop-filtered")
 	})
 
+	t.Run("pause, resume and clear work on a filtered tab", pauseResumeClear)
+
 	t.Run("search narrows the rows", func(t *testing.T) {
 		if err := run(chromedp.Click(`button[role="tab"][data-filter=""]`, chromedp.ByQuery),
 			setLevel(""),
@@ -345,6 +396,20 @@ func TestLogViewer(t *testing.T) {
 		shot("phone")
 		if overflow {
 			t.Fatal("page scrolls horizontally at phone width")
+		}
+		// Each toolbar button must be the element a tap on its centre reaches.
+		var covered []string
+		eval(`["pause", "clear", "search", "level"].filter(id => {
+			const el = document.querySelector('[data-testid="' + id + '"]');
+			el.scrollIntoView({block: "center"});
+			const r = el.getBoundingClientRect();
+			const hit = document.elementFromPoint(r.x + r.width/2, r.y + r.height/2);
+			return !el.contains(hit);
+		}).map(id => { const el = document.querySelector('[data-testid="' + id + '"]'), r = el.getBoundingClientRect();
+			const hit = document.elementFromPoint(r.x + r.width/2, r.y + r.height/2);
+			return id + " covered by " + (hit ? hit.outerHTML.slice(0, 120) : "nothing"); })`, &covered)
+		if len(covered) > 0 {
+			t.Errorf("toolbar controls a tap can't reach: %q", covered)
 		}
 	})
 
