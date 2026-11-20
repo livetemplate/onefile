@@ -61,4 +61,4 @@ The end-to-end test builds tinkerdown from source, serves a copy of this app, an
 TINKERDOWN_SRC=../tinkerdown go test ./...
 ```
 
-`TINKERDOWN_SRC` defaults to `../tinkerdown`.
+`TINKERDOWN_SRC` defaults to `../tinkerdown`. The build uses that checkout's committed client bundle, so run `make build-client` there after changing its client. To test a binary you already built, set `TINKERDOWN_BIN` instead.

@@ -25,11 +25,7 @@ title: Logs
   {{if .Error}}<p data-testid="error"><mark>{{.Error}}</mark></p>{{end}}
 
   <ol class="log" data-testid="log" lvt-fx:scroll="bottom-sticky">
-    {{range .Data}}
-    <li data-key="{{.seq}}" class="lvl-{{.level}} stream-{{.stream}} src-{{.source}}">
-      <time>{{.time}}</time><b class="src">{{.source}}</b><i class="lvl">{{.level}}</i><span class="msg">{{.msg}}</span><span class="std">{{.stream}}</span>
-    </li>
-    {{end}}
+    {{- range .Data}}<li data-key="{{.seq}}" class="lvl-{{.level}} stream-{{.stream}} src-{{.source}}"><time>{{.time}}</time><b class="src">{{.source}}</b><i class="lvl">{{.level}}</i><span class="msg">{{.msg}}</span><span class="std">{{.stream}}</span></li>{{end -}}
   </ol>
 </main>
 ```
@@ -42,23 +38,22 @@ title: Logs
 .viewer .status { font-size: .85rem; opacity: .7; white-space: nowrap; }
 .log { height: 70vh; overflow-y: auto; margin: 0; padding: 0; list-style: none;
        font: .8rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--pico-muted-border-color, #ddd); border-radius: 6px; }
-.log li { display: grid; grid-template-columns: 7.5rem 4.5rem 3.5rem 1fr auto; gap: .5rem; padding: .1rem .5rem; border-bottom: 1px solid rgba(127,127,127,.12); }
+/* content-visibility skips layout and paint for rows scrolled out of view */
+.log li { content-visibility: auto; contain-intrinsic-size: auto 1.6rem; display: grid; grid-template-columns: 7.5rem 4.5rem 3.5rem 1fr auto; gap: .5rem; padding: .1rem .5rem; border-bottom: 1px solid rgba(127,127,127,.12); }
 .log .src { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .log .lvl { font-style: normal; text-transform: uppercase; font-size: .7rem; }
 .log .msg { word-break: break-word; }
-.log .std { opacity: 0; font-size: .7rem; }
-.log .stream-stderr .std, .log .stream-system .std { opacity: .6; }
+.log .std { visibility: hidden; font-size: .7rem; color: #999; }
+.log .stream-stderr .std, .log .stream-system .std { visibility: visible; }
 .log .lvl-error, .log .lvl-fatal { color: #d93526; }
 .log .lvl-warn { color: #b06500; }
-.log .lvl-debug, .log .lvl-trace { opacity: .6; }
-.log .stream-system { font-style: italic; opacity: .7; }
+.log .lvl-debug, .log .lvl-trace, .log .stream-system { color: #888; }
+.log .stream-system { font-style: italic; }
 @media (max-width: 600px) {
   .viewer .toolbar form { flex-basis: 100%; }
-  .log li { grid-template-columns: auto auto 1fr; grid-template-areas: "time lvl std" "msg msg msg"; }
-  .log time { grid-area: time; }
-  .log .lvl { grid-area: lvl; }
-  .log .std { grid-area: std; justify-self: end; }
-  .log .msg { grid-area: msg; }
+  .log li { grid-template-columns: auto auto 1fr; }
   .log .src { display: none; }
+  .log .std { justify-self: end; }
+  .log .msg { grid-column: 1 / -1; grid-row: 2; }
 }
 </style>

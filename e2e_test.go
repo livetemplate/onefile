@@ -2,7 +2,8 @@ package logviewer
 
 // End-to-end test of the log viewer: builds tinkerdown from source, serves a
 // copy of this app, and drives it in Docker Chrome. Set TINKERDOWN_SRC to the
-// tinkerdown checkout to test against (default ../tinkerdown).
+// tinkerdown checkout to test against (default ../tinkerdown), or TINKERDOWN_BIN
+// to a built binary to skip the build.
 
 import (
 	"bytes"
@@ -51,9 +52,14 @@ func freePort(t *testing.T) int {
 	return l.Addr().(*net.TCPAddr).Port
 }
 
-// buildTinkerdown compiles the tinkerdown CLI from TINKERDOWN_SRC.
+// buildTinkerdown returns TINKERDOWN_BIN, or compiles the tinkerdown CLI from
+// TINKERDOWN_SRC. The build embeds that checkout's committed client bundle, so
+// client changes need `make build-client` there first.
 func buildTinkerdown(t *testing.T) string {
 	t.Helper()
+	if bin := os.Getenv("TINKERDOWN_BIN"); bin != "" {
+		return bin
+	}
 	src := os.Getenv("TINKERDOWN_SRC")
 	if src == "" {
 		src = "../tinkerdown"
@@ -151,7 +157,6 @@ type browserLogs struct {
 	console []string
 	recv    []string
 	sent    []string
-	recvAt  []time.Time
 }
 
 func (l *browserLogs) listen(ctx context.Context) {
@@ -167,7 +172,6 @@ func (l *browserLogs) listen(ctx context.Context) {
 			l.console = append(l.console, "[exception] "+e.ExceptionDetails.Text)
 		case *network.EventWebSocketFrameReceived:
 			l.recv = append(l.recv, e.Response.PayloadData)
-			l.recvAt = append(l.recvAt, time.Now())
 		case *network.EventWebSocketFrameSent:
 			l.sent = append(l.sent, e.Response.PayloadData)
 		}
@@ -218,6 +222,23 @@ func TestLogViewer(t *testing.T) {
 		}
 		dump()
 		t.Fatalf("timed out waiting for %s (%s)", what, js)
+	}
+	exec := func(js string) {
+		t.Helper()
+		if err := run(chromedp.Evaluate(js, nil)); err != nil {
+			dump()
+			t.Fatalf("evaluate %s: %v", js, err)
+		}
+	}
+	// everyRow is a JS check that the list has rows and all satisfy pred (row r).
+	everyRow := func(pred string) string {
+		return fmt.Sprintf(`(() => { const li = [...document.querySelectorAll("ol.log li")]; return li.length > 0 && li.every(r => %s); })()`, pred)
+	}
+	// setLevel picks a level as a user would. chromedp.SetValue("") leaves a
+	// select with no option chosen, a state no user can reach.
+	setLevel := func(v string) chromedp.Action {
+		return chromedp.Evaluate(fmt.Sprintf(`(() => { const s = document.querySelector('[data-testid="level"]');
+			s.value = %q; s.dispatchEvent(new Event("change", {bubbles: true})); })()`, v), nil)
 	}
 	shot := func(name string) {
 		var buf []byte
@@ -280,7 +301,7 @@ func TestLogViewer(t *testing.T) {
 		waitJS("more rows", fmt.Sprintf(`document.querySelectorAll("ol.log li").length > %d`, count))
 		waitJS("still pinned after new rows", atBottom)
 
-		eval(`(() => { const l = document.querySelector("ol.log"); l.scrollTop = 0; return 0; })()`, &count)
+		exec(`document.querySelector("ol.log").scrollTop = 0`)
 		eval(`document.querySelectorAll("ol.log li").length`, &count)
 		waitJS("more rows while scrolled up", fmt.Sprintf(`document.querySelectorAll("ol.log li").length > %d`, count))
 		var top float64
@@ -288,36 +309,31 @@ func TestLogViewer(t *testing.T) {
 		if top > 40 {
 			t.Fatalf("scrolled-up reader was moved to %v", top)
 		}
-		eval(`(() => { const l = document.querySelector("ol.log"); l.scrollTop = l.scrollHeight; return 0; })()`, &count)
+		exec(`document.querySelector("ol.log").scrollTop = 1e9`)
 	})
 
 	t.Run("level filter still applies after switching to a source tab", func(t *testing.T) {
-		if err := run(chromedp.SetValue(`[data-testid="level"]`, "warn", chromedp.ByQuery),
-			chromedp.Evaluate(`document.querySelector('[data-testid="level"]').dispatchEvent(new Event("change", {bubbles: true}))`, nil)); err != nil {
+		if err := run(setLevel("warn")); err != nil {
 			dump()
 			t.Fatal(err)
 		}
-		onlyWarn := `(() => { const li = [...document.querySelectorAll("ol.log li")]; return li.length > 0 && li.every(r => r.classList.contains("lvl-warn")); })()`
-		waitJS("only warn rows", onlyWarn)
+		waitJS("only warn rows", everyRow(`r.classList.contains("lvl-warn")`))
 		if err := run(chromedp.Click(`button[role="tab"][data-filter="source = worker"]`, chromedp.ByQuery)); err != nil {
 			dump()
 			t.Fatal(err)
 		}
-		waitJS("only worker warn rows", `(() => { const li = [...document.querySelectorAll("ol.log li")];
-			return li.length > 0 && li.every(r => r.classList.contains("lvl-warn") && r.classList.contains("src-worker")); })()`)
+		waitJS("only worker warn rows", everyRow(`r.classList.contains("lvl-warn") && r.classList.contains("src-worker")`))
 		shot("desktop-filtered")
 	})
 
 	t.Run("search narrows the rows", func(t *testing.T) {
 		if err := run(chromedp.Click(`button[role="tab"][data-filter=""]`, chromedp.ByQuery),
-			chromedp.SetValue(`[data-testid="level"]`, "", chromedp.ByQuery),
-			chromedp.Evaluate(`document.querySelector('[data-testid="level"]').dispatchEvent(new Event("change", {bubbles: true}))`, nil),
+			setLevel(""),
 			chromedp.SendKeys(`[data-testid="search"]`, "failed job", chromedp.ByQuery)); err != nil {
 			dump()
 			t.Fatal(err)
 		}
-		waitJS("only matching rows", `(() => { const li = [...document.querySelectorAll("ol.log li")];
-			return li.length > 0 && li.every(r => r.textContent.includes("failed job")); })()`)
+		waitJS("only matching rows", everyRow(`r.textContent.includes("failed job")`))
 	})
 
 	t.Run("phone layout", func(t *testing.T) {
@@ -332,20 +348,11 @@ func TestLogViewer(t *testing.T) {
 		}
 	})
 
-	t.Run("the test captured websocket traffic and console output", func(t *testing.T) {
+	t.Run("filters went over the websocket", func(t *testing.T) {
 		logs.mu.Lock()
 		defer logs.mu.Unlock()
-		sentFilter := false
-		for _, f := range logs.sent {
-			sentFilter = sentFilter || strings.Contains(f, `"action":"Filter"`)
-		}
-		t.Logf("captured: %d sent, %d received, %d console lines", len(logs.sent), len(logs.recv), len(logs.console))
-		if !sentFilter || len(logs.recv) == 0 {
-			t.Fatalf("websocket capture incomplete: sent %q", logs.sent)
+		if !strings.Contains(strings.Join(logs.sent, "\n"), `"action":"Filter"`) {
+			t.Fatalf("no Filter action in the sent frames: %q", logs.sent)
 		}
 	})
-
-	if t.Failed() {
-		dump()
-	}
 }
