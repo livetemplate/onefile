@@ -2,9 +2,9 @@ package e2e
 
 // End-to-end test of the log viewer: builds tinkerdown from source, serves a
 // copy of this app, and drives it in Docker Chrome. Set TINKERDOWN_SRC to the
-// tinkerdown checkout to test against (default ../tinkerdown), or TINKERDOWN_BIN
-// to a built binary to skip the build. A relative TINKERDOWN_SRC is read from
-// the repo root, where `go test ./...` is run.
+// tinkerdown checkout to test against (default ../../tinkerdown, a sibling of
+// this repo), or TINKERDOWN_BIN to a built binary to skip the build. Relative
+// paths are read from this e2e directory, where `go test` runs.
 
 import (
 	"bytes"
@@ -64,10 +64,7 @@ func buildTinkerdown(t *testing.T) string {
 	}
 	src := os.Getenv("TINKERDOWN_SRC")
 	if src == "" {
-		src = "../tinkerdown"
-	}
-	if !filepath.IsAbs(src) {
-		src = filepath.Join(appDir, src)
+		src = "../../tinkerdown"
 	}
 	bin := filepath.Join(t.TempDir(), "tinkerdown")
 	cmd := exec.Command("go", "build", "-o", bin, "./cmd/tinkerdown")

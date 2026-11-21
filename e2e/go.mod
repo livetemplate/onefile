@@ -1,4 +1,4 @@
-module github.com/livetemplate/logviewer
+module github.com/livetemplate/logviewer/e2e
 
 go 1.26.0
 
