@@ -78,17 +78,21 @@ func buildTinkerdown(t *testing.T) string {
 // appDir is the log viewer itself: the repo root, one level up from this test.
 const appDir = ".."
 
-// copyApp copies the viewer into a temp dir, so the test can append to its
-// log file without touching the repo.
+// copyApp copies the viewer and its demo inputs into a temp dir, so the test
+// can append to the log file without touching the repo.
 func copyApp(t *testing.T) string {
 	t.Helper()
 	dst := t.TempDir()
-	for _, p := range []string{"index.md", "scripts/demo-logs.sh", "logs/app.log"} {
-		data, err := os.ReadFile(filepath.Join(appDir, p))
+	for from, to := range map[string]string{
+		filepath.Join(appDir, "index.md"): "index.md",
+		"testdata/demo-logs.sh":           "scripts/demo-logs.sh",
+		"testdata/app.log":                "logs/app.log",
+	} {
+		data, err := os.ReadFile(from)
 		if err != nil {
 			t.Fatal(err)
 		}
-		target := filepath.Join(dst, p)
+		target := filepath.Join(dst, to)
 		os.MkdirAll(filepath.Dir(target), 0o755)
 		if err := os.WriteFile(target, data, 0o755); err != nil {
 			t.Fatal(err)
@@ -97,12 +101,21 @@ func copyApp(t *testing.T) string {
 	return dst
 }
 
-// serve runs `tinkerdown serve --allow-exec` on dir and returns its URL and log.
-func serve(t *testing.T, bin, dir string) (string, *syncBuffer) {
+// demoSources are the --source flags the test serves the viewer with: two
+// demo processes and a log file, as a user would pass their own.
+var demoSources = []string{
+	"--source", "web=./scripts/demo-logs.sh web",
+	"--source", "worker=./scripts/demo-logs.sh worker",
+	"--source", "app=file:./logs/app.log",
+}
+
+// serve runs `tinkerdown serve --allow-exec` on dir with the given flags and
+// returns its URL and log.
+func serve(t *testing.T, bin, dir string, flags ...string) (string, *syncBuffer) {
 	t.Helper()
 	port := freePort(t)
 	logs := &syncBuffer{}
-	cmd := exec.Command(bin, "serve", "--allow-exec", "--port", fmt.Sprint(port), dir)
+	cmd := exec.Command(bin, append([]string{"serve", "--allow-exec", "--port", fmt.Sprint(port), dir}, flags...)...)
 	cmd.Stdout, cmd.Stderr = logs, logs
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
@@ -185,7 +198,8 @@ func (l *browserLogs) listen(ctx context.Context) {
 func TestLogViewer(t *testing.T) {
 	bin := buildTinkerdown(t)
 	dir := copyApp(t)
-	url, serverLog := serve(t, bin, dir)
+	url, serverLog := serve(t, bin, dir, demoSources...)
+	emptyURL, _ := serve(t, bin, copyApp(t))
 	ctx := dockerChrome(t)
 	logs := &browserLogs{}
 	logs.listen(ctx)
@@ -394,6 +408,20 @@ func TestLogViewer(t *testing.T) {
 			return id + " covered by " + (hit ? hit.outerHTML.slice(0, 120) : "nothing"); })`, &covered)
 		if len(covered) > 0 {
 			t.Errorf("toolbar controls a tap can't reach: %q", covered)
+		}
+	})
+
+	t.Run("with no sources the page says what to pass", func(t *testing.T) {
+		if err := run(chromedp.EmulateViewport(1280, 900), chromedp.Navigate(emptyURL),
+			chromedp.WaitVisible(`[data-testid="log"]`, chromedp.ByQuery)); err != nil {
+			dump()
+			t.Fatal(err)
+		}
+		waitJS("the empty state", `(document.querySelector('[data-testid="empty"]')?.textContent || "").includes("Logs to follow")`)
+		var tabs int
+		eval(`document.querySelectorAll('button[role="tab"]').length`, &tabs)
+		if tabs != 1 {
+			t.Fatalf("%d tabs with no sources, want only All", tabs)
 		}
 	})
 }

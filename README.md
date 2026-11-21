@@ -6,52 +6,52 @@ A live log viewer built with [tinkerdown](https://github.com/livetemplate/tinker
 
 ## Run it
 
-Setting this up with a coding agent? Point it at [AGENTS.md](AGENTS.md): it installs tinkerdown, asks which logs to follow, and configures the page.
+The page has no log sources of its own: you pass them when you serve it. Run it straight from GitHub, with one `--source` per log:
 
 ```sh
-tinkerdown serve --allow-exec .
+tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/logviewer/main/index.md \
+  --source 'api=docker logs -f --timestamps --tail 200 api' \
+  --source 'app=file:/var/log/app.log'
 ```
 
-Then open http://localhost:8080. The default sources are two demo processes (`web` and `worker`) and the file `logs/app.log`, so the page shows lines straight away. `--allow-exec` lets sources run commands. Without it, only file sources work.
+Then open http://localhost:8080. Each source gets a tab, and **All** shows every source in one timeline. `serve` prints the page's SHA-256: add `#sha256=…` to the URL to make sure you run the page you reviewed.
 
-Stream sources need tinkerdown with stream support: tinkerdown built from `main` until the next release.
+To run a local copy instead, use the file:
+
+```sh
+tinkerdown serve --allow-exec index.md --source 'api=docker logs -f api'
+```
+
+Run it with no `--source` in a terminal and `serve` asks for sources, then prints the command to reuse. `--allow-exec` lets sources run commands; leave it out when every source is a `file:`.
+
+Setting this up with a coding agent? Point it at [AGENTS.md](AGENTS.md).
+
+Stream sources, `--source` and serving from a URL need tinkerdown built from `main` until the next release.
 
 ## Add your own logs
 
-Sources live in the frontmatter of `index.md`. Each `stream` source follows one command or one file:
+Each `--source NAME=VALUE` adds one log. A value starting with `file:` follows that file; anything else is a command, run through the shell:
 
-```yaml
-sources:
-  api:
-    type: stream
-    cmd: docker logs -f --timestamps --tail 200 api
-  syslog:
-    type: stream
-    file: /var/log/syslog
-```
+| To follow | Pass |
+|-----------|------|
+| A docker container | `--source 'api=docker logs -f --timestamps --tail 200 api'` |
+| The systemd journal | `--source 'journal=journalctl -f -n 200 -o short-iso'` |
+| A kubernetes deployment | `--source 'pods=kubectl logs -f --timestamps --tail 200 deploy/api'` |
+| A log file | `--source 'syslog=file:/var/log/syslog'` |
 
-Then add the new names in two places in `index.md`:
-
-1. `inputs` of the `all` source, so they join the timeline.
-2. The tabs heading, for example `| [api] source = api`.
+Names may use letters, digits, `_` and `-`. `tinkerdown serve --help` lists the options. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
 
 ### Follow a local web app
 
-To see a web app's stdout and stderr, let the viewer start it. Give its start command as `cmd`, from the log viewer's directory:
+To see a web app's stdout and stderr, let the viewer start it. Pass its start command:
 
-```yaml
-sources:
-  api:
-    type: stream
-    cmd: cd ../my-api && go run ./cmd/server
-    env:
-      PORT: "3000"
-  web:
-    type: stream
-    cmd: cd ../my-web && npm run dev
+```sh
+tinkerdown serve --allow-exec index.md \
+  --source 'api=cd ../my-api && PORT=3000 go run ./cmd/server' \
+  --source 'web=cd ../my-web && npm run dev'
 ```
 
-The app starts when you first open the page, and stops 5 minutes after the last tab closes. Each line is tagged `stdout` or `stderr`, and stderr lines are marked in the list. If the app crashes, the viewer notes it and restarts it after 1 second, waiting longer after each crash, up to 30 seconds; add `restart: never` to leave it stopped. Stopping `tinkerdown serve` stops the app and anything it started.
+The app starts when you first open the page, and stops 5 minutes after the last tab closes. Each line is tagged `stdout` or `stderr`, and stderr lines are marked in the list. If the app crashes, the viewer notes it and restarts it after 1 second, waiting longer after each crash, up to 30 seconds. Stopping `tinkerdown serve` stops the app and anything it started.
 
 If the app already runs somewhere else, send its output to files and follow those instead. Start it with:
 
@@ -59,19 +59,11 @@ If the app already runs somewhere else, send its output to files and follow thos
 ./server >out.log 2>err.log
 ```
 
-Then add a `file:` source for each file:
+Then pass each file:
 
-```yaml
-sources:
-  api-out:
-    type: stream
-    file: ../my-api/out.log
-  api-err:
-    type: stream
-    file: ../my-api/err.log
+```sh
+tinkerdown serve index.md --source 'api-out=file:../my-api/out.log' --source 'api-err=file:../my-api/err.log'
 ```
-
-The frontmatter has commented examples for docker, journald and kubectl. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
 
 ## Use it
 
@@ -99,4 +91,4 @@ The end-to-end test in `e2e/` builds tinkerdown from source, serves a copy of th
 cd e2e && go test ./...
 ```
 
-The test has its own Go module, so the app itself is only `index.md` and its demo files. `TINKERDOWN_SRC` points at the tinkerdown checkout to build. It defaults to `../../tinkerdown`, a sibling of this repo, and a relative path is read from `e2e/`. The build uses that checkout's committed client bundle, so run `make build-client` there after changing its client. To test a binary you already built, set `TINKERDOWN_BIN` instead.
+The test has its own Go module, and its demo inputs (two log-writing processes and a log file) live in `e2e/testdata`, so the app itself is only `index.md`. `TINKERDOWN_SRC` points at the tinkerdown checkout to build. It defaults to `../../tinkerdown`, a sibling of this repo, and a relative path is read from `e2e/`. The build uses that checkout's committed client bundle, so run `make build-client` there after changing its client. To test a binary you already built, set `TINKERDOWN_BIN` instead.

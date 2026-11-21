@@ -1,7 +1,7 @@
 #!/bin/sh
 # demo-logs.sh NAME — writes a mix of JSON, logfmt and plain-text log lines,
-# some to stderr, until stopped. The sources in index.md run it twice so
-# the viewer has something to show before you point it at real logs.
+# some to stderr, until stopped. The e2e test passes it twice as --source
+# flags, so the viewer has lines to show.
 name=${1:-demo}
 i=0
 while true; do

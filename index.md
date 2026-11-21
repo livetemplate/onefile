@@ -1,41 +1,19 @@
 ---
 title: Logs
-# Each stream source follows one command or file, and "all" merges them into
-# the timeline below. Add your own, then list them in all.inputs and in the
-# tabs heading. Commands need: tinkerdown serve --allow-exec
+# This page has no log sources of its own: pass them when you serve it.
+#   tinkerdown serve --allow-exec . --source 'api=docker logs -f --timestamps api' --source 'app=file:/var/log/app.log'
+# tinkerdown serve --help shows more examples.
 sources:
-  web:
-    type: stream
-    cmd: ./scripts/demo-logs.sh web
-  worker:
-    type: stream
-    cmd: ./scripts/demo-logs.sh worker
-  app:
-    type: stream
-    file: ./logs/app.log
-
-  # A docker container (stdout and stderr stay separate):
-  # api:
-  #   type: stream
-  #   cmd: docker logs -f --timestamps --tail 200 api
-  #
-  # The system journal:
-  # journal:
-  #   type: stream
-  #   cmd: journalctl -f -n 200 -o short-iso
-  #
-  # A kubernetes deployment:
-  # pods:
-  #   type: stream
-  #   cmd: kubectl logs -f --timestamps --tail 200 deploy/api
-
   all:
     type: merge
-    inputs: [web, worker, app]
+    inputs: ["*"]
     buffer: 5000
+    accepts:
+      min: 1
+      hint: "Logs to follow: a container, a dev server or a log file"
 ---
 
-## [All] | [web] source = web | [worker] source = worker | [app] source = app
+## [All] | [*] source
 
 ```lvt
 <main lvt-source="all">
@@ -63,6 +41,10 @@ sources:
   </small>
   {{if .Error}}
     <p data-testid="error"><mark>{{.Error}}</mark></p>
+  {{end}}
+  {{if not .Inputs}}
+    <p data-testid="empty">No log sources yet. {{.Accepts.Hint}}. Restart with
+      <code>--source 'NAME=COMMAND'</code> or <code>--source 'NAME=file:PATH'</code>.</p>
   {{end}}
 
   <ol class="log" data-testid="log" lvt-fx:scroll="bottom-sticky">
