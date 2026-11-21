@@ -298,6 +298,13 @@ func TestLogViewer(t *testing.T) {
 		fmt.Fprintln(f, `{"level":"error","msg":"disk almost full"}`)
 		f.Close()
 		waitJS("the appended line", `[...document.querySelectorAll("li.src-app .msg")].some(m => m.textContent === "disk almost full")`)
+		// tinkerdown colours rows by level; the page has no colour rules of its own.
+		var coloured bool
+		eval(`(() => { const c = s => getComputedStyle(document.querySelector(s)).color; return c("li.lvl-error") !== c("li.lvl-info"); })()`, &coloured)
+		if !coloured {
+			dump()
+			t.Fatal("error rows are not coloured")
+		}
 	})
 
 	pauseResumeClear := func(t *testing.T) {
