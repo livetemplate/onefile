@@ -1,6 +1,6 @@
 #!/bin/sh
 # demo-logs.sh NAME — writes a mix of JSON, logfmt and plain-text log lines,
-# some to stderr, until stopped. The default tinkerdown.yaml runs it twice so
+# some to stderr, until stopped. The sources in index.md run it twice so
 # the viewer has something to show before you point it at real logs.
 name=${1:-demo}
 i=0

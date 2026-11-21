@@ -80,7 +80,7 @@ func buildTinkerdown(t *testing.T) string {
 func copyApp(t *testing.T) string {
 	t.Helper()
 	dst := t.TempDir()
-	for _, p := range []string{"index.md", "tinkerdown.yaml", "scripts/demo-logs.sh", "logs/app.log"} {
+	for _, p := range []string{"index.md", "scripts/demo-logs.sh", "logs/app.log"} {
 		data, err := os.ReadFile(p)
 		if err != nil {
 			t.Fatal(err)

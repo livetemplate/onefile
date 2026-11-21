@@ -12,11 +12,11 @@ tinkerdown serve --allow-exec .
 
 Then open http://localhost:8080. The default sources are two demo processes (`web` and `worker`) and the file `logs/app.log`, so the page shows lines straight away. `--allow-exec` lets sources run commands. Without it, only file sources work.
 
-Stream sources need tinkerdown with stream support: the `stream-sources` branch until it is released.
+Stream sources need tinkerdown with stream support: tinkerdown built from `main` until the next release.
 
 ## Add your own logs
 
-Sources live in `tinkerdown.yaml`. Each `stream` source follows one command or one file:
+Sources live in the frontmatter of `index.md`. Each `stream` source follows one command or one file:
 
 ```yaml
 sources:
@@ -28,12 +28,12 @@ sources:
     file: /var/log/syslog
 ```
 
-Then add the new names in two places:
+Then add the new names in two places in `index.md`:
 
-1. `inputs` of the `all` source in `tinkerdown.yaml`, so they join the timeline.
-2. The tabs heading in `index.md`, for example `| [api] source = api`.
+1. `inputs` of the `all` source, so they join the timeline.
+2. The tabs heading, for example `| [api] source = api`.
 
-`tinkerdown.yaml` has commented examples for docker, journald and kubectl. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
+The frontmatter has commented examples for docker, journald and kubectl. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
 
 ## Use it
 

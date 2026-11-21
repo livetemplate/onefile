@@ -1,5 +1,38 @@
 ---
 title: Logs
+# Each stream source follows one command or file, and "all" merges them into
+# the timeline below. Add your own, then list them in all.inputs and in the
+# tabs heading. Commands need: tinkerdown serve --allow-exec
+sources:
+  web:
+    type: stream
+    cmd: ./scripts/demo-logs.sh web
+  worker:
+    type: stream
+    cmd: ./scripts/demo-logs.sh worker
+  app:
+    type: stream
+    file: ./logs/app.log
+
+  # A docker container (stdout and stderr stay separate):
+  # api:
+  #   type: stream
+  #   cmd: docker logs -f --timestamps --tail 200 api
+  #
+  # The system journal:
+  # journal:
+  #   type: stream
+  #   cmd: journalctl -f -n 200 -o short-iso
+  #
+  # A kubernetes deployment:
+  # pods:
+  #   type: stream
+  #   cmd: kubectl logs -f --timestamps --tail 200 deploy/api
+
+  all:
+    type: merge
+    inputs: [web, worker, app]
+    buffer: 5000
 ---
 
 ## [All] | [web] source = web | [worker] source = worker | [app] source = app
