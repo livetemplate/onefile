@@ -1,82 +1,23 @@
 package e2e
 
-// End-to-end test of the log viewer: builds tinkerdown from source, serves a
-// copy of this app, and drives it in Docker Chrome. Set TINKERDOWN_SRC to the
-// tinkerdown checkout to test against (default ../../tinkerdown, a sibling of
-// this repo), or TINKERDOWN_BIN to a built binary to skip the build. Relative
-// paths are read from this e2e directory, where `go test` runs.
+// End-to-end test of the log viewer (../logs): serves a copy of it with demo
+// sources passed as --source flags, and drives it in Docker Chrome.
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"net"
-	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 )
 
-// syncBuffer is a goroutine-safe log sink.
-type syncBuffer struct {
-	mu  sync.Mutex
-	buf bytes.Buffer
-}
-
-func (b *syncBuffer) Write(p []byte) (int, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.buf.Write(p)
-}
-
-func (b *syncBuffer) String() string {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.buf.String()
-}
-
-func freePort(t *testing.T) int {
-	t.Helper()
-	l, err := net.Listen("tcp", "localhost:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port
-}
-
-// buildTinkerdown returns TINKERDOWN_BIN, or compiles the tinkerdown CLI from
-// TINKERDOWN_SRC. The build embeds that checkout's committed client bundle, so
-// client changes need `make build-client` there first.
-func buildTinkerdown(t *testing.T) string {
-	t.Helper()
-	if bin := os.Getenv("TINKERDOWN_BIN"); bin != "" {
-		return bin
-	}
-	src := os.Getenv("TINKERDOWN_SRC")
-	if src == "" {
-		src = "../../tinkerdown"
-	}
-	bin := filepath.Join(t.TempDir(), "tinkerdown")
-	cmd := exec.Command("go", "build", "-o", bin, "./cmd/tinkerdown")
-	cmd.Dir = src
-	cmd.Env = append(os.Environ(), "GOWORK=off")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("build tinkerdown from %s: %v\n%s", src, err, out)
-	}
-	return bin
-}
-
-// appDir is the log viewer itself: the repo root, one level up from this test.
-const appDir = ".."
+// logsDir is the log viewer app, next to this e2e directory.
+const logsDir = "../logs"
 
 // copyApp copies the viewer and its demo inputs into a temp dir, so the test
 // can append to the log file without touching the repo.
@@ -84,9 +25,9 @@ func copyApp(t *testing.T) string {
 	t.Helper()
 	dst := t.TempDir()
 	for from, to := range map[string]string{
-		filepath.Join(appDir, "index.md"): "index.md",
-		"testdata/demo-logs.sh":           "scripts/demo-logs.sh",
-		"testdata/app.log":                "logs/app.log",
+		filepath.Join(logsDir, "index.md"): "index.md",
+		"testdata/logs/demo-logs.sh":       "scripts/demo-logs.sh",
+		"testdata/logs/app.log":            "logs/app.log",
 	} {
 		data, err := os.ReadFile(from)
 		if err != nil {
@@ -107,92 +48,6 @@ var demoSources = []string{
 	"--source", "web=./scripts/demo-logs.sh web",
 	"--source", "worker=./scripts/demo-logs.sh worker",
 	"--source", "app=file:./logs/app.log",
-}
-
-// serve runs `tinkerdown serve --allow-exec` on dir with the given flags and
-// returns its URL and log.
-func serve(t *testing.T, bin, dir string, flags ...string) (string, *syncBuffer) {
-	t.Helper()
-	port := freePort(t)
-	logs := &syncBuffer{}
-	cmd := exec.Command(bin, append([]string{"serve", "--allow-exec", "--port", fmt.Sprint(port), dir}, flags...)...)
-	cmd.Stdout, cmd.Stderr = logs, logs
-	if err := cmd.Start(); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		cmd.Process.Signal(os.Interrupt)
-		done := make(chan struct{})
-		go func() { cmd.Wait(); close(done) }()
-		select {
-		case <-done:
-		case <-time.After(15 * time.Second):
-			cmd.Process.Kill()
-		}
-	})
-	url := fmt.Sprintf("http://localhost:%d", port)
-	for i := 0; i < 100; i++ {
-		if resp, err := http.Get(url); err == nil {
-			resp.Body.Close()
-			return url, logs
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	t.Fatalf("server did not start:\n%s", logs.String())
-	return "", nil
-}
-
-// dockerChrome starts headless Chrome in Docker on the host network.
-func dockerChrome(t *testing.T) context.Context {
-	t.Helper()
-	if out, err := exec.Command("docker", "version").CombinedOutput(); err != nil {
-		t.Fatalf("docker is required for the e2e test: %v\n%s", err, out)
-	}
-	port := freePort(t)
-	name := fmt.Sprintf("chrome-e2e-logviewer-%d", port)
-	if out, err := exec.Command("docker", "run", "-d", "--rm", "--name", name, "--network", "host",
-		"chromedp/headless-shell:stable", fmt.Sprintf("--remote-debugging-port=%d", port)).CombinedOutput(); err != nil {
-		t.Fatalf("start chrome: %v\n%s", err, out)
-	}
-	t.Cleanup(func() { exec.Command("docker", "rm", "-f", name).Run() })
-	for i := 0; i < 120; i++ {
-		if resp, err := http.Get(fmt.Sprintf("http://localhost:%d/json/version", port)); err == nil {
-			resp.Body.Close()
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
-	alloc, cancelAlloc := chromedp.NewRemoteAllocator(context.Background(), fmt.Sprintf("http://localhost:%d", port))
-	ctx, cancelCtx := chromedp.NewContext(alloc)
-	ctx, cancelTimeout := context.WithTimeout(ctx, 3*time.Minute)
-	t.Cleanup(func() { cancelTimeout(); cancelCtx(); cancelAlloc() })
-	return ctx
-}
-
-type browserLogs struct {
-	mu      sync.Mutex
-	console []string
-	recv    []string
-	sent    []string
-}
-
-func (l *browserLogs) listen(ctx context.Context) {
-	chromedp.ListenTarget(ctx, func(ev interface{}) {
-		l.mu.Lock()
-		defer l.mu.Unlock()
-		switch e := ev.(type) {
-		case *runtime.EventConsoleAPICalled:
-			for _, a := range e.Args {
-				l.console = append(l.console, fmt.Sprintf("[%s] %s", e.Type, a.Value))
-			}
-		case *runtime.EventExceptionThrown:
-			l.console = append(l.console, "[exception] "+e.ExceptionDetails.Text)
-		case *network.EventWebSocketFrameReceived:
-			l.recv = append(l.recv, e.Response.PayloadData)
-		case *network.EventWebSocketFrameSent:
-			l.sent = append(l.sent, e.Response.PayloadData)
-		}
-	})
 }
 
 func TestLogViewer(t *testing.T) {
@@ -261,7 +116,7 @@ func TestLogViewer(t *testing.T) {
 	shot := func(name string) {
 		var buf []byte
 		if err := run(chromedp.FullScreenshot(&buf, 90)); err == nil {
-			path := filepath.Join(os.TempDir(), "logviewer-"+name+".png")
+			path := filepath.Join(os.TempDir(), "onefile-logs-"+name+".png")
 			os.WriteFile(path, buf, 0o644)
 			t.Logf("screenshot: %s", path)
 		}

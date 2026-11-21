@@ -1,6 +1,6 @@
-# Set up the log viewer for a user
+# Run a onefile app for a user
 
-The log viewer is one page with no log sources of its own. You pass the user's logs as `--source` flags when you serve it, so nothing needs editing.
+Each app in this repo is one page, `<app>/index.md`, served with tinkerdown straight from its URL. An app that needs sources takes them as `--source` flags, so nothing needs editing. The steps below set up the log viewer, [`logs`](logs/README.md); other apps follow the same pattern and say in their README what they take.
 
 ## 1. Install tinkerdown
 
@@ -25,7 +25,7 @@ It lists the `--source` forms with an example for each kind of log.
 ## 4. Serve it
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/logviewer/main/index.md \
+tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md \
   --source 'api=docker logs -f --timestamps --tail 200 api' \
   --source 'app=file:/var/log/app.log'
 ```

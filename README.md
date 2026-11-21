@@ -1,94 +1,40 @@
-# Log Viewer
+# onefile
 
-A live log viewer built with [tinkerdown](https://github.com/livetemplate/tinkerdown). It follows commands, docker containers and log files, and shows them in one timeline with a tab per source, level and text filters, pause, and clear.
-
-![Desktop: the worker tab filtered to warnings](docs/desktop.png)
-
-## Run it
-
-The page has no log sources of its own: you pass them when you serve it. Run it straight from GitHub, with one `--source` per log:
+Small apps for developers, each one a single [tinkerdown](https://github.com/livetemplate/tinkerdown) page. Run any of them straight from GitHub, without cloning:
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/logviewer/main/index.md \
-  --source 'api=docker logs -f --timestamps --tail 200 api' \
-  --source 'app=file:/var/log/app.log'
+tinkerdown serve https://raw.githubusercontent.com/livetemplate/onefile/main/<app>/index.md
 ```
 
-Then open http://localhost:8080. Each source gets a tab, and **All** shows every source in one timeline. `serve` prints the page's SHA-256: add `#sha256=…` to the URL to make sure you run the page you reviewed.
+A page served from a URL can't run commands or read files on its own. An app that needs them, such as the log viewer, takes them as `--source` flags that you pass.
 
-To run a local copy instead, use the file:
+## Apps
+
+| App | What it does | Run it |
+|-----|--------------|--------|
+| [logs](logs/README.md) | Follows commands, containers and log files in one live timeline, with a tab per source, level and text filters, pause and clear. | `tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md --source 'api=docker logs -f api'` |
+
+Setting an app up with a coding agent? Point it at [AGENTS.md](AGENTS.md).
+
+The apps need tinkerdown built from `main` until the next release:
 
 ```sh
-tinkerdown serve --allow-exec index.md --source 'api=docker logs -f api'
+go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@main
 ```
 
-Run it with no `--source` in a terminal and `serve` asks for sources, then prints the command to reuse. `--allow-exec` lets sources run commands; leave it out when every source is a `file:`.
+## Add an app
 
-Setting this up with a coding agent? Point it at [AGENTS.md](AGENTS.md).
-
-Stream sources, `--source` and serving from a URL need tinkerdown built from `main` until the next release.
-
-## Add your own logs
-
-Each `--source NAME=VALUE` adds one log. A value starting with `file:` follows that file; anything else is a command, run through the shell:
-
-| To follow | Pass |
-|-----------|------|
-| A docker container | `--source 'api=docker logs -f --timestamps --tail 200 api'` |
-| The systemd journal | `--source 'journal=journalctl -f -n 200 -o short-iso'` |
-| A kubernetes deployment | `--source 'pods=kubectl logs -f --timestamps --tail 200 deploy/api'` |
-| A log file | `--source 'syslog=file:/var/log/syslog'` |
-
-Names may use letters, digits, `_` and `-`. `tinkerdown serve --help` lists the options. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
-
-### Follow a local web app
-
-To see a web app's stdout and stderr, let the viewer start it. Pass its start command:
-
-```sh
-tinkerdown serve --allow-exec index.md \
-  --source 'api=cd ../my-api && PORT=3000 go run ./cmd/server' \
-  --source 'web=cd ../my-web && npm run dev'
-```
-
-The app starts when you first open the page, and stops 5 minutes after the last tab closes. Each line is tagged `stdout` or `stderr`, and stderr lines are marked in the list. If the app crashes, the viewer notes it and restarts it after 1 second, waiting longer after each crash, up to 30 seconds. Stopping `tinkerdown serve` stops the app and anything it started.
-
-If the app already runs somewhere else, send its output to files and follow those instead. Start it with:
-
-```sh
-./server >out.log 2>err.log
-```
-
-Then pass each file:
-
-```sh
-tinkerdown serve index.md --source 'api-out=file:../my-api/out.log' --source 'api-err=file:../my-api/err.log'
-```
-
-## Use it
-
-| To | Do |
-|----|----|
-| Watch everything | Stay on **All**. The list follows new lines. |
-| Read back | Scroll up. The list stops following until you scroll back to the bottom. |
-| Focus on one source | Pick its tab. |
-| Find errors | Set the level to **error**. It keeps applying when you switch tabs. |
-| Find text | Type in the search box. |
-| Freeze the view | **Pause**. **Resume** catches up. |
-| Start fresh | **Clear** hides the lines shown so far. |
-
-Lines from stderr and the viewer's own notes (such as a restarted command) are marked at the right of each line.
-
-On a phone, each line puts its time and level above the message:
-
-<img src="docs/phone.png" alt="Phone: a search for failed job" width="300">
+1. Make a folder named after the app, with the page as `index.md` and a `README.md` that says what it does and what it takes.
+2. Keep the page self-contained. A page served from a URL may only declare `merge` sources, and its sources come from `--source` flags.
+3. Add an end-to-end test as `e2e/<app>_test.go`. It can use the helpers in `e2e/helpers_test.go`, and its fixtures go in `e2e/testdata/<app>/`.
+4. Add a row to the table above.
 
 ## Test
 
-The end-to-end test in `e2e/` builds tinkerdown from source, serves a copy of this app, and drives it in Chrome. It needs Docker and Go.
+The end-to-end tests build tinkerdown from source, serve each app, and drive it in Chrome. They need Docker and Go:
 
 ```sh
 cd e2e && go test ./...
 ```
 
-The test has its own Go module, and its demo inputs (two log-writing processes and a log file) live in `e2e/testdata`, so the app itself is only `index.md`. `TINKERDOWN_SRC` points at the tinkerdown checkout to build. It defaults to `../../tinkerdown`, a sibling of this repo, and a relative path is read from `e2e/`. The build uses that checkout's committed client bundle, so run `make build-client` there after changing its client. To test a binary you already built, set `TINKERDOWN_BIN` instead.
+`TINKERDOWN_SRC` points at the tinkerdown checkout to build. It defaults to `../../tinkerdown`, a sibling of this repo, and a relative path is read from `e2e/`. The build uses that checkout's committed client bundle, so run `make build-client` there after changing its client. To test a binary you already built, set `TINKERDOWN_BIN` instead.
