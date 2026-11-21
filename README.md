@@ -33,6 +33,26 @@ Then add the new names in two places in `index.md`:
 1. `inputs` of the `all` source, so they join the timeline.
 2. The tabs heading, for example `| [api] source = api`.
 
+### Follow a local web app
+
+To see a web app's stdout and stderr, let the viewer start it. Give its start command as `cmd`, from the log viewer's directory:
+
+```yaml
+sources:
+  api:
+    type: stream
+    cmd: cd ../my-api && go run ./cmd/server
+    env:
+      PORT: "3000"
+  web:
+    type: stream
+    cmd: cd ../my-web && npm run dev
+```
+
+The app starts when you first open the page, and stops 5 minutes after the last tab closes. Each line is tagged `stdout` or `stderr`, and stderr lines are marked in the list. If the app crashes, the viewer notes it and restarts it after 1 second, waiting longer after each crash, up to 30 seconds; add `restart: never` to leave it stopped. Stopping `tinkerdown serve` stops the app and anything it started.
+
+If the app already runs somewhere else, send its output to files and follow those instead: start it with `./server >out.log 2>err.log`, and add a `file:` source for each file.
+
 The frontmatter has commented examples for docker, journald and kubectl. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
 
 ## Use it
