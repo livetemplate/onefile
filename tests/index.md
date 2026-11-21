@@ -45,7 +45,11 @@ sources:
 
 <style>
 .tests { padding: 0; list-style: none; font: .85rem/1.5 var(--pico-font-family-monospace); }
-.tests li { display: grid; grid-template-columns: 3.5rem 10rem 1fr auto; gap: .5rem; }
+.tests li { display: grid; grid-template-columns: 3.5rem minmax(0, 12rem) minmax(0, 1fr) auto; gap: .5rem; }
+/* Long names wrap; package paths stay on one line and show their end. */
+.tests .name { min-width: 0; overflow-wrap: anywhere; }
+.tests .pkg { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+              direction: rtl; text-align: left; opacity: .75; }
 .tests .act::before { display: inline-block; width: 1.2em; }
 .tests .act-pass .act::before { content: "✓"; }
 .tests .act-fail .act::before { content: "✗"; }
@@ -58,7 +62,7 @@ sources:
 .tests .out { grid-column: 1 / -1; margin: 0; white-space: pre-wrap; }
 .tests li:not(.act-fail) .out, .tests .out:empty { display: none; }
 @media (max-width: 600px) {
-  .tests li { grid-template-columns: auto 1fr auto; }
-  .tests .pkg { grid-column: 1 / -1; grid-row: 1; }
+  .tests li { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .tests .pkg { grid-column: 1 / -1; grid-row: 1; font-size: .75rem; }
 }
 </style>

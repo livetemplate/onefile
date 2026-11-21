@@ -76,7 +76,7 @@ func TestTests(t *testing.T) {
 			row("TestDeleteUser")+`?.classList.contains("act-fail") && `+row("TestPostgres")+`?.classList.contains("act-skip")`)
 		var names []string
 		run(chromedp.Evaluate(`[...document.querySelectorAll("ol.tests li .name")].map(n => n.textContent).filter(n => n)`, &names))
-		if got := strings.Join(names, ","); got != "TestCreateUser,TestDeleteUser,TestPostgres" {
+		if got := strings.Join(names, ","); got != "TestCreateUser,TestDeleteUser,TestPostgres,TestLineSplitterTruncatesHugeLineAcrossChunksWithoutLosingTheNextLine" {
 			dump()
 			t.Fatalf("test rows = %s; want one per test, in run order", got)
 		}
@@ -126,14 +126,25 @@ func TestTests(t *testing.T) {
 	})
 
 	t.Run("phone layout", func(t *testing.T) {
-		if err := run(chromedp.EmulateViewport(390, 844)); err != nil {
+		// Clear the search so every row, the long names too, is on screen.
+		if err := run(chromedp.Evaluate(`(() => { const s = document.querySelector('[data-testid="search"]');
+			s.value = ""; s.dispatchEvent(new Event("input", {bubbles: true})); })()`, nil),
+			chromedp.EmulateViewport(390, 844)); err != nil {
 			t.Fatal(err)
 		}
+		waitJS(t, "every test back", `document.querySelectorAll("ol.tests li .name").length >= 4`)
 		var overflow bool
 		run(chromedp.Evaluate(`document.documentElement.scrollWidth > window.innerWidth + 1`, &overflow))
 		shotPNG(t, run, "tests-phone")
 		if overflow {
 			t.Fatal("page scrolls horizontally at phone width")
+		}
+		// No row may be wider than its box: a long test name or package
+		// path must wrap or be cut, not run past the card.
+		var wide []string
+		run(chromedp.Evaluate(`[...document.querySelectorAll("ol.tests li > *")].filter(e => e.getBoundingClientRect().right > e.closest("li").getBoundingClientRect().right + 1).map(e => e.className + ": " + e.textContent.slice(0, 40))`, &wide))
+		if len(wide) > 0 {
+			t.Fatalf("cells overflow their row at phone width: %q", wide)
 		}
 	})
 }
