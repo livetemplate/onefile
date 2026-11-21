@@ -27,7 +27,9 @@ func TestTests(t *testing.T) {
 	defer pages.Close()
 	sample, _ := filepath.Abs("testdata/tests/sample")
 	url, serverLog := serve(t, bin, pages.URL+"/index.md",
-		"--source", "go=cd "+sample+" && GOWORK=off GOFLAGS=-count=1 go test -json ./...")
+		// The sleep opens the page before any result exists, as a user who
+		// opens it while tests compile would.
+		"--source", "go=sleep 3 && cd "+sample+" && GOWORK=off GOFLAGS=-count=1 go test -json ./...")
 
 	ctx := dockerChrome(t)
 	logs := &browserLogs{}
@@ -72,11 +74,13 @@ func TestTests(t *testing.T) {
 	}
 
 	t.Run("one row per test with its status", func(t *testing.T) {
-		waitJS(t, "every test finished", row("TestCreateUser")+`?.classList.contains("act-pass") && `+
+		waitJS(t, "every test finished", `document.querySelectorAll("ol.tests li").length >= 8 && `+row("TestCreateUser")+`?.classList.contains("act-pass") && `+
 			row("TestDeleteUser")+`?.classList.contains("act-fail") && `+row("TestPostgres")+`?.classList.contains("act-skip")`)
 		var names []string
 		run(chromedp.Evaluate(`[...document.querySelectorAll("ol.tests li .name")].map(n => n.textContent).filter(n => n)`, &names))
-		if got := strings.Join(names, ","); got != "TestCreateUser,TestDeleteUser,TestPostgres,TestLineSplitterTruncatesHugeLineAcrossChunksWithoutLosingTheNextLine" {
+		want := "TestCreateUser,TestDeleteUser,TestPostgres,TestLineSplitterTruncatesHugeLineAcrossChunksWithoutLosingTheNextLine," +
+			`TestParseValue,TestParseValue/"hello",TestParseValue/'world'`
+		if got := strings.Join(names, ","); got != want {
 			dump()
 			t.Fatalf("test rows = %s; want one per test, in run order", got)
 		}
@@ -122,7 +126,16 @@ func TestTests(t *testing.T) {
 			dump()
 			t.Fatal(err)
 		}
+		// The quoted subtests must go too: their keys once broke the
+		// client's lookup of the rows to remove.
 		waitJS(t, "only matching tests", `(() => { const n = [...document.querySelectorAll("ol.tests li .name")].map(e => e.textContent); return n.length === 2 && n.every(x => x.toLowerCase().includes("user")); })()`)
+		var shown, counted int
+		run(chromedp.Evaluate(`document.querySelectorAll("ol.tests li").length`, &shown),
+			chromedp.Evaluate(`parseInt(document.querySelector('[data-testid="status"]').textContent)`, &counted))
+		if shown != counted {
+			dump()
+			t.Fatalf("%d rows on screen, but the status counts %d", shown, counted)
+		}
 	})
 
 	t.Run("phone layout", func(t *testing.T) {
@@ -132,7 +145,7 @@ func TestTests(t *testing.T) {
 			chromedp.EmulateViewport(390, 844)); err != nil {
 			t.Fatal(err)
 		}
-		waitJS(t, "every test back", `document.querySelectorAll("ol.tests li .name").length >= 4`)
+		waitJS(t, "every test back", `document.querySelectorAll("ol.tests li .name").length >= 7`)
 		var overflow bool
 		run(chromedp.Evaluate(`document.documentElement.scrollWidth > window.innerWidth + 1`, &overflow))
 		shotPNG(t, run, "tests-phone")
