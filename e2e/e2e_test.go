@@ -1,9 +1,10 @@
-package logviewer
+package e2e
 
 // End-to-end test of the log viewer: builds tinkerdown from source, serves a
 // copy of this app, and drives it in Docker Chrome. Set TINKERDOWN_SRC to the
 // tinkerdown checkout to test against (default ../tinkerdown), or TINKERDOWN_BIN
-// to a built binary to skip the build.
+// to a built binary to skip the build. A relative TINKERDOWN_SRC is read from
+// the repo root, where `go test ./...` is run.
 
 import (
 	"bytes"
@@ -65,6 +66,9 @@ func buildTinkerdown(t *testing.T) string {
 	if src == "" {
 		src = "../tinkerdown"
 	}
+	if !filepath.IsAbs(src) {
+		src = filepath.Join(appDir, src)
+	}
 	bin := filepath.Join(t.TempDir(), "tinkerdown")
 	cmd := exec.Command("go", "build", "-o", bin, "./cmd/tinkerdown")
 	cmd.Dir = src
@@ -75,13 +79,16 @@ func buildTinkerdown(t *testing.T) string {
 	return bin
 }
 
+// appDir is the log viewer itself: the repo root, one level up from this test.
+const appDir = ".."
+
 // copyApp copies the viewer into a temp dir, so the test can append to its
 // log file without touching the repo.
 func copyApp(t *testing.T) string {
 	t.Helper()
 	dst := t.TempDir()
 	for _, p := range []string{"index.md", "scripts/demo-logs.sh", "logs/app.log"} {
-		data, err := os.ReadFile(p)
+		data, err := os.ReadFile(filepath.Join(appDir, p))
 		if err != nil {
 			t.Fatal(err)
 		}

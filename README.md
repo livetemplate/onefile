@@ -55,10 +55,10 @@ On a phone, each line puts its time and level above the message:
 
 ## Test
 
-The end-to-end test builds tinkerdown from source, serves a copy of this app, and drives it in Chrome. It needs Docker and Go.
+The end-to-end test in `e2e/` builds tinkerdown from source, serves a copy of this app, and drives it in Chrome. It needs Docker and Go.
 
 ```sh
 TINKERDOWN_SRC=../tinkerdown go test ./...
 ```
 
-`TINKERDOWN_SRC` defaults to `../tinkerdown`. The build uses that checkout's committed client bundle, so run `make build-client` there after changing its client. To test a binary you already built, set `TINKERDOWN_BIN` instead.
+Run it from the repo root. `TINKERDOWN_SRC` defaults to `../tinkerdown`, and a relative path is read from the repo root. The build uses that checkout's committed client bundle, so run `make build-client` there after changing its client. To test a binary you already built, set `TINKERDOWN_BIN` instead.
