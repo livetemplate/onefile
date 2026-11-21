@@ -47,18 +47,34 @@ sources:
       <option value="info">info</option>
       <option value="debug">debug</option>
     </select>
-    <input type="search" name="f.line" data-testid="search" placeholder="search" aria-label="Search"
-           lvt-on:input="Filter" lvt-mod:debounce="250">
+    <input type="search" name="f.line" data-testid="search" placeholder="search"
+           aria-label="Search" lvt-on:input="Filter" lvt-mod:debounce="250">
   </form>
   <div role="group">
-    {{if .Paused}}<button name="Resume" data-testid="resume">Resume</button>{{else}}<button name="Pause" data-testid="pause">Pause</button>{{end}}
+    {{if .Paused}}
+      <button name="Resume" data-testid="resume">Resume</button>
+    {{else}}
+      <button name="Pause" data-testid="pause">Pause</button>
+    {{end}}
     <button name="Clear" data-testid="clear" class="secondary">Clear</button>
   </div>
-  <small data-testid="status">{{if .Paused}}paused{{else}}● live{{end}} · {{len .Data}} lines</small>
-  {{if .Error}}<p data-testid="error"><mark>{{.Error}}</mark></p>{{end}}
+  <small data-testid="status">
+    {{if .Paused}}paused{{else}}● live{{end}} · {{len .Data}} lines
+  </small>
+  {{if .Error}}
+    <p data-testid="error"><mark>{{.Error}}</mark></p>
+  {{end}}
 
   <ol class="log" data-testid="log" lvt-fx:scroll="bottom-sticky">
-    {{- range .Data}}<li data-key="{{.seq}}" class="lvl-{{.level}} stream-{{.stream}} src-{{.source}}"><time>{{.time}}</time><b class="src">{{.source}}</b><small class="lvl">{{.level}}</small><span class="msg">{{.msg}}</span><small class="std">{{.stream}}</small></li>{{end -}}
+    {{range .Data}}
+      <li data-key="{{.seq}}" class="lvl-{{.level}} stream-{{.stream}} src-{{.source}}">
+        <time>{{.time}}</time>
+        <b class="src">{{.source}}</b>
+        <small class="lvl">{{.level}}</small>
+        <span class="msg">{{.msg}}</span>
+        <small class="std">{{.stream}}</small>
+      </li>
+    {{end}}
   </ol>
 </main>
 ```
