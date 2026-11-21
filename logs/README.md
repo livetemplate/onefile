@@ -26,7 +26,7 @@ Run it with no `--source` in a terminal and `serve` asks for sources, then print
 
 Setting this up with a coding agent? Point it at [AGENTS.md](../AGENTS.md).
 
-Stream sources, `--source` and serving from a URL need tinkerdown built from `main` until the next release.
+It needs tinkerdown 0.5.0 or later: `brew install livetemplate/tap/tinkerdown`.
 
 ## Add your own logs
 

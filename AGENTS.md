@@ -5,10 +5,10 @@ Each app in this repo is one page, `<app>/index.md`, served with tinkerdown stra
 ## 1. Install tinkerdown
 
 ```sh
-go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@main
+brew install livetemplate/tap/tinkerdown
 ```
 
-Use `@main` until a release includes stream sources and `--source`. The install needs Go 1.26 or later.
+Or, with Go 1.26 or later: `go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest`. The apps need tinkerdown 0.5.0 or later; check with `tinkerdown version`.
 
 ## 2. Ask the user which logs to follow
 
