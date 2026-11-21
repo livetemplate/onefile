@@ -6,6 +6,8 @@ A live log viewer built with [tinkerdown](https://github.com/livetemplate/tinker
 
 ## Run it
 
+Setting this up with a coding agent? Point it at [AGENTS.md](AGENTS.md): it installs tinkerdown, asks which logs to follow, and configures the page.
+
 ```sh
 tinkerdown serve --allow-exec .
 ```
