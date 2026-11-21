@@ -51,7 +51,23 @@ sources:
 
 The app starts when you first open the page, and stops 5 minutes after the last tab closes. Each line is tagged `stdout` or `stderr`, and stderr lines are marked in the list. If the app crashes, the viewer notes it and restarts it after 1 second, waiting longer after each crash, up to 30 seconds; add `restart: never` to leave it stopped. Stopping `tinkerdown serve` stops the app and anything it started.
 
-If the app already runs somewhere else, send its output to files and follow those instead: start it with `./server >out.log 2>err.log`, and add a `file:` source for each file.
+If the app already runs somewhere else, send its output to files and follow those instead. Start it with:
+
+```sh
+./server >out.log 2>err.log
+```
+
+Then add a `file:` source for each file:
+
+```yaml
+sources:
+  api-out:
+    type: stream
+    file: ../my-api/out.log
+  api-err:
+    type: stream
+    file: ../my-api/err.log
+```
 
 The frontmatter has commented examples for docker, journald and kubectl. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
 
