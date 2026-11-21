@@ -13,6 +13,7 @@ A page served from a URL can't run commands or read files on its own. An app tha
 | App | What it does | Run it |
 |-----|--------------|--------|
 | [logs](logs/README.md) | Follows commands, containers and log files in one live timeline, with a tab per source, level and text filters, pause and clear. | `tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md --source 'api=docker logs -f api'` |
+| [tests](tests/README.md) | Runs your tests on every save: one row per test, failures with their output, search by name. Reads `go test -json`. | `tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/tests/index.md --source 'go=watchexec -e go -- go test -json ./...'` |
 
 Setting an app up with a coding agent? Point it at [AGENTS.md](AGENTS.md).
 

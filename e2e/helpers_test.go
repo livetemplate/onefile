@@ -160,3 +160,21 @@ func (l *browserLogs) listen(ctx context.Context) {
 		}
 	})
 }
+
+// chromedpTimeout bounds one browser action, so a missing element fails fast
+// with a dump instead of waiting for the whole Chrome deadline.
+func chromedpTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, 15*time.Second)
+}
+
+// shotPNG saves a full-page screenshot as onefile-NAME.png in the temp dir
+// and logs its path; apps copy them into their docs/.
+func shotPNG(t *testing.T, run func(...chromedp.Action) error, name string) {
+	t.Helper()
+	var buf []byte
+	if err := run(chromedp.FullScreenshot(&buf, 90)); err == nil {
+		path := filepath.Join(os.TempDir(), "onefile-"+name+".png")
+		os.WriteFile(path, buf, 0o644)
+		t.Logf("screenshot: %s", path)
+	}
+}
