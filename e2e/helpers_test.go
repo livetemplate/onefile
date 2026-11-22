@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -80,20 +81,29 @@ func buildTinkerdown(t *testing.T) string {
 func serve(t *testing.T, bin, dir string, flags ...string) (string, *syncBuffer) {
 	t.Helper()
 	port := freePort(t)
-	logs := &syncBuffer{}
 	cmd := exec.Command(bin, append([]string{"serve", "--allow-exec", "--port", fmt.Sprint(port), dir}, flags...)...)
+	return serveCmd(t, cmd, port)
+}
+
+// serveCmd starts cmd, a tinkerdown server listening on port, and returns its
+// URL and log once it answers. It runs in its own process group, so a server
+// started through a shell is stopped along with the shell.
+func serveCmd(t *testing.T, cmd *exec.Cmd, port int) (string, *syncBuffer) {
+	t.Helper()
+	logs := &syncBuffer{}
 	cmd.Stdout, cmd.Stderr = logs, logs
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		cmd.Process.Signal(os.Interrupt)
+		syscall.Kill(-cmd.Process.Pid, syscall.SIGINT)
 		done := make(chan struct{})
 		go func() { cmd.Wait(); close(done) }()
 		select {
 		case <-done:
 		case <-time.After(15 * time.Second):
-			cmd.Process.Kill()
+			syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 		}
 	})
 	url := fmt.Sprintf("http://localhost:%d", port)
