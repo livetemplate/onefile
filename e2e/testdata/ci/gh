@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# A fake gh for TestCI. It answers the commands the ci README runs from
+# fixture files in $FAKE_GH_DIR, which the test changes over time, and
+# applies each command's --jq with jq, as gh does:
+#
+#   runs-OWNER_REPO.json  `run list --repo OWNER/REPO`: the runs, newest first
+#   view-ID.json          `run view ID --json …`: {"status", "jobs": [...]}
+#   log-ID.txt            `run view ID --log-failed`: JOB<TAB>STEP<TAB>line
+#   fail                  if present, `run list` fails with a two-line error
+#
+# Every command but `run list` appends itself to calls.txt.
+set -euo pipefail
+dir=${FAKE_GH_DIR:?}
+[ "${1:-}" = run ] || { echo "fake gh: unsupported: $*" >&2; exit 2; }
+cmd=$2
+shift 2
+id="" repo="" jq="" logfailed=""
+[ "$cmd" = list ] || echo "$cmd $*" >> "$dir/calls.txt"
+while [ $# -gt 0 ]; do
+  case $1 in
+    --repo) repo=$2; shift 2 ;;
+    --jq) jq=$2; shift 2 ;;
+    --json|--limit|--attempt) shift 2 ;;
+    --log-failed) logfailed=1; shift ;;
+    --failed) shift ;;
+    -*) echo "fake gh: unknown flag $1" >&2; exit 2 ;;
+    *) id=$1; shift ;;
+  esac
+done
+case $cmd in
+  list)
+    if [ -e "$dir/fail" ]; then
+      printf 'HTTP 403: API rate limit exceeded\nTry again later.\n' >&2
+      exit 1
+    fi
+    jq -rc "$jq" "$dir/runs-${repo//\//_}.json"
+    ;;
+  view)
+    if [ -n "$logfailed" ]; then
+      cat "$dir/log-$id.txt" 2>/dev/null || true
+    else
+      jq -rc "$jq" "$dir/view-$id.json"
+    fi
+    ;;
+  rerun|cancel) ;;
+  *) echo "fake gh: unsupported: run $cmd" >&2; exit 2 ;;
+esac

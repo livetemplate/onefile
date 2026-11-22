@@ -16,6 +16,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"sync"
 	"syscall"
 	"testing"
@@ -187,4 +189,31 @@ func shotPNG(t *testing.T, run func(...chromedp.Action) error, name string) {
 		os.WriteFile(path, buf, 0o644)
 		t.Logf("screenshot: %s", path)
 	}
+}
+
+// readmeCommandOf returns the serve command in the README at path: the first
+// sh block that runs tinkerdown serve, joined into one line.
+func readmeCommandOf(t *testing.T, path string) string {
+	t.Helper()
+	readme, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range regexp.MustCompile("(?s)```sh\n(.*?)```").FindAllStringSubmatch(string(readme), -1) {
+		if strings.HasPrefix(m[1], "tinkerdown serve") {
+			return strings.ReplaceAll(strings.TrimSpace(m[1]), "\\\n", "")
+		}
+	}
+	t.Fatalf("no tinkerdown serve command in %s", path)
+	return ""
+}
+
+// replaceOnce replaces old with new in s, and fails if old isn't there
+// exactly once, so a README edit can't silently skip a test substitution.
+func replaceOnce(t *testing.T, s, old, new string) string {
+	t.Helper()
+	if n := strings.Count(s, old); n != 1 {
+		t.Fatalf("README command holds %q %d times, want once:\n%s", old, n, s)
+	}
+	return strings.Replace(s, old, new, 1)
 }
