@@ -199,7 +199,12 @@ func TestContainers(t *testing.T) {
 	})
 
 	t.Run("Stop moves a row to exited, and Start brings it back", func(t *testing.T) {
-		click(t, "db", "stop")
+		// The button spins from the click until docker stop returns.
+		var busy string
+		if err := run(chromedp.Evaluate(`(b => (b.click(), b.getAttribute("aria-busy")))(document.querySelector('ol.ctr button[name="stop"][data-name="`+prefix+`db"]'))`, &busy)); err != nil || busy != "true" {
+			dump()
+			t.Fatalf("Stop's aria-busy right after the click = %q (err %v), want true", busy, err)
+		}
 		waitJS(t, "db exited", row("db")+`?.classList.contains("st-exited")`)
 		click(t, "db", "start")
 		waitJS(t, "db running again", row("db")+`?.classList.contains("st-running")`)
@@ -211,6 +216,7 @@ func TestContainers(t *testing.T) {
 			t.Fatal(err)
 		}
 		waitJS(t, "web's log lines", logMsgs+`.some(m => m.textContent.startsWith("web line"))`)
+		waitJS(t, "the pane naming web", `document.querySelector('[data-testid="log-title"]').textContent === "`+prefix+`web · Logs"`)
 		mark := fmt.Sprintf("marker-%d", time.Now().UnixNano())
 		docker("exec", prefix+"web", "sh", "-c", "echo "+mark+" > /proc/1/fd/1")
 		waitJS(t, "a line printed after opening", logMsgs+`.some(m => m.textContent === "`+mark+`")`)

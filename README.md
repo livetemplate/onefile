@@ -18,7 +18,7 @@ A page served from a URL can't run commands or read files on its own. An app tha
 
 Setting an app up with a coding agent? Point it at [AGENTS.md](AGENTS.md).
 
-The apps need tinkerdown 0.7.0 or later:
+The apps need tinkerdown 0.7.1 or later:
 
 ```sh
 brew install livetemplate/tap/tinkerdown

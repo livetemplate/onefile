@@ -56,7 +56,7 @@ sources:
 
 ```lvt
 <aside class="logpane" lvt-source="logview" aria-label="Logs">
-  <header><b>Logs</b> <small data-testid="log-status">{{len .Data}} lines</small></header>
+  <header><b data-testid="log-title">{{with .Params.name}}{{.}} · {{end}}Logs</b> <small data-testid="log-status">{{len .Data}} lines</small></header>
   {{if .Error}}<p data-testid="log-error"><mark>{{.Error}}</mark></p>{{end}}
   {{if not .Data}}<p class="hint" data-testid="log-hint">Click a container's name to follow its logs.</p>{{end}}
   <ol class="log" data-testid="logs" lvt-fx:scroll="bottom-sticky">
