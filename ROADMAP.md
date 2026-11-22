@@ -1,0 +1,46 @@
+# Roadmap
+
+These are the next 20 apps to build, most needed first. We'll take them one at a time. Each app gets a plan, the plan gets approved, and then the app gets built. When an app needs something tinkerdown can't do yet, we add it to tinkerdown as part of that app's work.
+
+An app makes this list when developers need a screen for the job but often skip the existing one because it's too big. That's usually a desktop app with accounts and workspaces, or a terminal UI with many keys to learn.
+
+Need is measured by the GitHub stars of the leading tools for each job, summed across tools, so one popular project doesn't decide the rank. Stars favour older projects and count every user, so treat close ranks as ties. The counts were fetched from the GitHub API on 2026-11-22.
+
+## The list
+
+| # | App | What it does | Leading tools (stars) | Why a page | Status |
+|---|---|---|---|---|---|
+| 1 | http | Saved HTTP requests with a Send button each; shows status, time, headers and formatted JSON. | [Hoppscotch](https://github.com/hoppscotch/hoppscotch) 81k, [Bruno](https://github.com/usebruno/bruno) 49k, [Insomnia](https://github.com/Kong/insomnia) 40k, [HTTPie](https://github.com/httpie/cli) 39k, [Hurl](https://github.com/Orange-OpenSource/hurl) 19k | Postman and Insomnia ask for an account and workspaces before the first request, so many developers go back to `curl` and read raw JSON. A page keeps requests as text in git, as Bruno does. | next |
+| 2 | db | Browse tables, run a query, see rows; SQLite and Postgres first. | [DBeaver](https://github.com/dbeaver/dbeaver) 53k, [DB Browser for SQLite](https://github.com/sqlitebrowser/sqlitebrowser) 25k, [Beekeeper Studio](https://github.com/beekeeper-studio/beekeeper-studio) 24k, [pgweb](https://github.com/sosedoff/pgweb) 10k, [Adminer](https://github.com/vrana/adminer) 8k | DBeaver is a full IDE. Adminer's pitch is "database management in a single PHP file", which shows the demand for one small page. | |
+| 3 | git | Status, branches and log live; stage, commit and switch branch with buttons. | [lazygit](https://github.com/jesseduffield/lazygit) 84k, [gitui](https://github.com/gitui-org/gitui) 23k, [tig](https://github.com/jonas/tig) 13k | GitKraken and Sourcetree are heavy, and lazygit's stars show how many people want a lighter screen. Editor git panels cover part of this, which is why it isn't higher. | |
+| 4 | tasks | A project's scripts and dev processes as buttons, with each one's output live. | [pm2](https://github.com/Unitech/pm2) 43k, [just](https://github.com/casey/just) 37k, [Task](https://github.com/go-task/task) 16k, [concurrently](https://github.com/open-cli-tools/concurrently) 8k, [Overmind](https://github.com/DarthSim/overmind) 4k | Running a web server, a worker and a watcher means several terminals or interleaved output. A page gives each its own pane and a restart button. | |
+| 5 | top | Processes and the ports they listen on, with CPU and memory, and a kill button. | [btop](https://github.com/aristocratos/btop) 35k, [Glances](https://github.com/nicolargo/glances) 34k, [bottom](https://github.com/ClementTsang/bottom) 14k, [htop](https://github.com/htop-dev/htop) 8k, [fkill](https://github.com/sindresorhus/fkill-cli) 7k | "Port 3000 is already in use" sends people to look up `lsof` flags. A page shows the port, the process and a kill button together. | |
+| 6 | mocks | Mock API routes written in the page; shows each request that hits them. | [json-server](https://github.com/typicode/json-server) 76k, [Mockoon](https://github.com/mockoon/mockoon) 8k, [WireMock](https://github.com/wiremock/wiremock) 7k, [Prism](https://github.com/stoplightio/prism) 5k | json-server has no screen to see what called it, and Mockoon is a desktop app. A page holds the routes and the request log in one place. | |
+| 7 | toolbox | Decode a JWT, base64 or URL; convert timestamps; format JSON; test a regex. | [IT Tools](https://github.com/CorentinTh/it-tools) 41k, [CyberChef](https://github.com/gchq/CyberChef) 37k | The usual way is a website, which means pasting tokens into someone else's server. A local page keeps them on your machine. | |
+| 8 | load | Run a load test against a URL and watch latency and errors on a live chart. | [k6](https://github.com/grafana/k6) 32k, [vegeta](https://github.com/tsenart/vegeta) 25k, [oha](https://github.com/hatoo/oha) 11k | These tools print a summary at the end. A chart while the test runs shows when latency climbs. | |
+| 9 | pods | Kubernetes pods live, with their logs, restart and delete. | [k9s](https://github.com/derailed/k9s) 35k, [Kubernetes Dashboard](https://github.com/kubernetes-retired/dashboard) 15k, [Headlamp](https://github.com/kubernetes-sigs/headlamp) 8k | Lens and the dashboard need installing into the cluster or onto the machine, and k9s has many keys to learn. This is `containers` for Kubernetes. | |
+| 10 | openapi | Render an OpenAPI file as docs, with a Try button on each endpoint. | [Swagger UI](https://github.com/swagger-api/swagger-ui) 29k, [Redoc](https://github.com/Redocly/redoc) 26k | Both need wiring into the API's server or a build step. A page reads the spec file directly. | |
+| 11 | proxy | Every HTTP request your app makes, through a local proxy, with headers and bodies. | [mitmproxy](https://github.com/mitmproxy/mitmproxy) 47k | Charles and Proxyman are paid desktop apps, and mitmproxy's own UI takes setup. A page lists requests as they happen. | |
+| 12 | redis | Browse keys by pattern, see values and TTLs, delete keys. | [Another Redis Desktop Manager](https://github.com/qishibo/AnotherRedisDesktopManager) 35k, [RedisInsight](https://github.com/redis/RedisInsight) 9k | Both are desktop apps. `redis-cli` shows one key at a time. | |
+| 13 | disk | The biggest folders, and build output such as `node_modules` and `target`, with a delete button. | [dust](https://github.com/bootandy/dust) 13k, [npkill](https://github.com/voidcosmos/npkill) 10k, [dua](https://github.com/Byron/dua-cli) 6k, [gdu](https://github.com/dundee/gdu) 6k | `du` output is hard to scan, and each tool covers one ecosystem. A page sorts and deletes across all of them. | |
+| 14 | deps | Outdated dependencies across a project's package managers, with an upgrade button. | [Renovate](https://github.com/renovatebot/renovate) 23k, [npm-check-updates](https://github.com/raineorshine/npm-check-updates) 10k | Renovate works through pull requests on a server; the CLIs print one list per ecosystem. | |
+| 15 | json | Open a JSON file or a command's output, fold it, and filter it with jq live. | [fx](https://github.com/antonmedv/fx) 21k, [jless](https://github.com/PaulJuliusMartinez/jless) 6k, [jqp](https://github.com/noahgorstein/jqp) 3k | A jq filter takes trial and error. A page shows the result as you type. | |
+| 16 | mail | A local inbox that catches the email your app sends in development. | [MailHog](https://github.com/mailhog/MailHog) 16k, [Mailpit](https://github.com/axllent/mailpit) 11k | Both run a separate server. A page could be the inbox for the app you already serve. | |
+| 17 | traces | OpenTelemetry traces from your local app as a waterfall. | [Jaeger](https://github.com/jaegertracing/jaeger) 23k, [otel-desktop-viewer](https://github.com/CtrlSpice/otel-desktop-viewer) 1k, [otel-tui](https://github.com/ymtdzzz/otel-tui) 1k | Jaeger is a backend built for production. otel-desktop-viewer and otel-tui exist because local development needs something smaller. | |
+| 18 | kafka | Topics, consumer lag, and messages as they arrive. | [Kafka UI](https://github.com/provectus/kafka-ui) 12k, [AKHQ](https://github.com/tchiotludo/akhq) 4k | Both are servers to deploy. The Kafka CLIs take long flag lists for each look. | |
+| 19 | prs | Your open pull requests and the ones waiting for your review, with checks and review state. | [gh-dash](https://github.com/dlvhdr/gh-dash) 13k | GitHub's pages split this across several tabs. Pairs with `ci`. | |
+| 20 | profile | Open a CPU profile as a flame graph. | [speedscope](https://github.com/jlfwong/speedscope) 7k | `go tool pprof -http` and browser devtools each read only their own format. | |
+
+## Built
+
+| App | Leading tools (stars) |
+|---|---|
+| [logs](logs/README.md) | [Dozzle](https://github.com/amir20/dozzle) 15k |
+| [containers](containers/README.md) | [lazydocker](https://github.com/jesseduffield/lazydocker) 53k, [ctop](https://github.com/bcicen/ctop) 18k |
+| [ci](ci/README.md) | [act](https://github.com/nektos/act) 73k, [gh-dash](https://github.com/dlvhdr/gh-dash) 13k |
+| [tests](tests/README.md) | [watchexec](https://github.com/watchexec/watchexec) 7k |
+
+## Left out
+
+- **[Uptime Kuma](https://github.com/louislam/uptime-kuma) (95k)** has more stars than anything above, but it monitors services in production and on home servers rather than helping during development.
+- **[LocalStack](https://github.com/localstack/localstack) (65k) and [MinIO](https://github.com/minio/minio) (61k)** are servers, not screens, so their stars don't measure demand for a page.
