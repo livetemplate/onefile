@@ -14,11 +14,12 @@ A page served from a URL can't run commands or read files on its own. An app tha
 |-----|--------------|--------|
 | [logs](logs/README.md) | Follows commands, containers and log files in one live timeline, with a tab per source, level and text filters, pause and clear. | `tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md --source 'api=docker logs -f api'` |
 | [containers](containers/README.md) | Lists your Docker containers live, with start, stop, restart and kill buttons, and follows a container's logs when you click its name. | Takes its Docker commands as flags: copy the command from [its README](containers/README.md#run-it). |
+| [ci](ci/README.md) | Your GitHub Actions runs as a live list: watch a run's jobs finish, read why it failed, rerun the failed jobs or cancel. Reads `gh run list`. | Takes its `gh` commands as flags: copy the command from [its README](ci/README.md#run-it). |
 | [tests](tests/README.md) | Runs your tests on every save: one row per test, failures with their output, search by name. Reads `go test -json`. | `tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/tests/index.md --source 'go=watchexec -e go -- go test -json ./...'` |
 
 Setting an app up with a coding agent? Point it at [AGENTS.md](AGENTS.md).
 
-The apps need tinkerdown 0.7.1 or later:
+The apps need tinkerdown 0.7.3 or later:
 
 ```sh
 brew install livetemplate/tap/tinkerdown
