@@ -18,7 +18,7 @@ tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/one
   --action 'kill=docker kill -- "$TD_name"'
 ```
 
-Then open http://localhost:8080. It needs tinkerdown 0.7.0 or later.
+Then open http://localhost:8080. It needs tinkerdown 0.7.1 or later.
 
 Each flag does one job:
 
@@ -38,8 +38,8 @@ To list fewer containers, add a filter to both `docker ps` and `docker events`, 
 |----|----|
 | See what's running | Pick **Running**, or search by name. |
 | Notice a crash | An exited container turns red and shows its exit code: `exited (137)`. |
-| Read a container's logs | Click its name. The logs pane follows new lines; scroll up to stop following, and back down to resume. |
-| Stop, start or restart one | Press the button on its row. A row shows only the buttons its state allows. |
+| Read a container's logs | Click its name, and the pane beside the list shows its logs under its name. It follows new lines; scroll up to stop following, and back down to resume. |
+| Stop, start or restart one | Press the button on its row. A row shows only the buttons its state allows, and a pressed button spins until Docker is done. |
 | Kill one | Press **Kill**. It asks first. |
 
 A removed container leaves the list. Links to a container's logs, such as `?name=web`, work only while that container is in the list, so a link from elsewhere can't start logs for a name you don't have.

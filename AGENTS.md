@@ -8,7 +8,7 @@ Each app in this repo is one page, `<app>/index.md`, served with tinkerdown stra
 brew install livetemplate/tap/tinkerdown
 ```
 
-Or, with Go 1.26 or later: `go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest`. The apps need tinkerdown 0.7.0 or later; check with `tinkerdown version`.
+Or, with Go 1.26 or later: `go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest`. The apps need tinkerdown 0.7.1 or later; check with `tinkerdown version`.
 
 ## 2. Ask the user which logs to follow
 
