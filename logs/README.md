@@ -26,7 +26,7 @@ Run it with no `--source` in a terminal and `serve` asks for sources, then print
 
 Setting this up with a coding agent? Point it at [AGENTS.md](../AGENTS.md).
 
-It needs tinkerdown 0.5.0 or later: `brew install livetemplate/tap/tinkerdown`.
+It needs tinkerdown 0.7.4 or later: `brew install livetemplate/tap/tinkerdown`.
 
 ## Add your own logs
 
@@ -77,11 +77,13 @@ tinkerdown serve index.md --source 'api-out=file:../my-api/out.log' --source 'ap
 | Freeze the view | **Pause**. **Resume** catches up. |
 | Start fresh | **Clear** hides the lines shown so far. |
 
+A line in JSON or logfmt shows its message, then each other field as `key=value`. Any `http://` or `https://` URL in a line is a link that opens in a new tab.
+
 Lines from stderr and the viewer's own notes (such as a restarted command) are marked at the right of each line.
 
 On a phone, each line puts its time and level above the message:
 
-<img src="docs/phone.png" alt="Phone: a search for failed job" width="300">
+<img src="docs/phone.png" alt="Phone: a search for sign, showing a line's fields and its link" width="300">
 
 ## Test
 

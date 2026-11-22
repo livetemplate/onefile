@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -107,11 +109,25 @@ func TestLogViewer(t *testing.T) {
 	everyRow := func(pred string) string {
 		return fmt.Sprintf(`(() => { const li = [...document.querySelectorAll("ol.log li")]; return li.length > 0 && li.every(r => %s); })()`, pred)
 	}
-	// setLevel picks a level as a user would. chromedp.SetValue("") leaves a
-	// select with no option chosen, a state no user can reach.
-	setLevel := func(v string) chromedp.Action {
-		return chromedp.Evaluate(fmt.Sprintf(`(() => { const s = document.querySelector('[data-testid="level"]');
-			s.value = %q; s.dispatchEvent(new Event("change", {bubbles: true})); })()`, v), nil)
+	// setField sets a toolbar field and fires event, as a user would.
+	// chromedp.SetValue("") leaves a select with no option chosen, a state no
+	// user can reach, and can't set the search box at all.
+	setField := func(testid, v, event string) chromedp.Action {
+		return chromedp.Evaluate(fmt.Sprintf(`(() => { const s = document.querySelector('[data-testid=%q]');
+			s.value = %q; s.dispatchEvent(new Event(%q, {bubbles: true})); })()`, testid, v, event), nil)
+	}
+	setLevel := func(v string) chromedp.Action { return setField("level", v, "change") }
+	// appendLog appends lines to the served copy's log file.
+	appendLog := func(lines ...string) {
+		t.Helper()
+		f, err := os.OpenFile(filepath.Join(dir, "logs/app.log"), os.O_APPEND|os.O_WRONLY, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		for _, l := range lines {
+			fmt.Fprintln(f, l)
+		}
 	}
 	shot := func(name string) {
 		var buf []byte
@@ -156,12 +172,7 @@ func TestLogViewer(t *testing.T) {
 	})
 
 	t.Run("appending to the log file shows the line", func(t *testing.T) {
-		f, err := os.OpenFile(filepath.Join(dir, "logs/app.log"), os.O_APPEND|os.O_WRONLY, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Fprintln(f, `{"level":"error","msg":"disk almost full"}`)
-		f.Close()
+		appendLog(`{"level":"error","msg":"disk almost full"}`)
 		waitJS("the appended line", `[...document.querySelectorAll("li.src-app .msg")].some(m => m.textContent === "disk almost full")`)
 	})
 
@@ -240,6 +251,78 @@ func TestLogViewer(t *testing.T) {
 		waitJS("only matching rows", everyRow(`r.textContent.includes("failed job")`))
 	})
 
+	// signinURL is the link an app logged in a field (onefile#4, #5).
+	const signinURL = "http://localhost:8080/signin/link?t=abc&u=1"
+	t.Run("a structured line shows its fields, with links", func(t *testing.T) {
+		if err := run(setField("search", "", "input")); err != nil {
+			dump()
+			t.Fatal(err)
+		}
+		waitJS("rows that don't match the old search", `[...document.querySelectorAll("ol.log li")].some(r => !r.textContent.includes("failed job"))`)
+		logs.mu.Lock()
+		framesBefore := len(logs.recv)
+		logs.mu.Unlock()
+		appendLog(`time=2026-11-22T13:17:53.000Z level=INFO msg=email subject="Your sign-in link" to=user@example.com body="Sign in: `+signinURL+`"`,
+			`{"level":"warn","msg":"<script>window.pwned=1</script> bad input"}`)
+		row := `[...document.querySelectorAll("li.src-app")].find(r => r.querySelector(".msg").textContent === "email")`
+		waitJS("the email row", "!!"+row)
+
+		var fields []string
+		eval(`[...`+row+`.querySelectorAll(".fields > span")].map(s => s.textContent)`, &fields)
+		want := []string{"body=Sign in: " + signinURL, "subject=Your sign-in link", "to=user@example.com"}
+		if !slices.Equal(fields, want) {
+			dump()
+			t.Fatalf("fields = %q, want %q", fields, want)
+		}
+
+		var links []map[string]string
+		eval(`[...`+row+`.querySelectorAll("a")].map(a => ({href: a.getAttribute("href"), text: a.textContent, target: a.target, rel: a.rel}))`, &links)
+		wantLinks := []map[string]string{{"href": signinURL, "text": signinURL, "target": "_blank", "rel": "noopener noreferrer"}}
+		if !reflect.DeepEqual(links, wantLinks) {
+			dump()
+			t.Fatalf("links in the email row = %v, want one new-tab link to %s", links, signinURL)
+		}
+
+		waitJS("the script line", `[...document.querySelectorAll("li.src-app .msg")].some(m => m.textContent === "<script>window.pwned=1</script> bad input")`)
+		var injected bool
+		eval(`!!document.querySelector("ol.log script") || window.pwned === 1`, &injected)
+		if injected {
+			dump()
+			t.Fatal("a <script> in a log line became an element")
+		}
+
+		// The new rows arrived as range append ops, not a resend of the list (A2).
+		logs.mu.Lock()
+		var frame string
+		for _, f := range logs.recv[framesBefore:] {
+			if strings.Contains(f, "signin/link") {
+				frame = f
+				break
+			}
+		}
+		logs.mu.Unlock()
+		if !strings.Contains(frame, `["a",`) {
+			dump()
+			t.Fatalf("the frame with the email row has no append op: %.600s", frame)
+		}
+	})
+
+	t.Run("search finds text in a field", func(t *testing.T) {
+		if err := run(chromedp.SendKeys(`[data-testid="search"]`, "sign", chromedp.ByQuery)); err != nil {
+			dump()
+			t.Fatal(err)
+		}
+		waitJS("only rows with sign", everyRow(`r.textContent.toLowerCase().includes("sign")`))
+		var visible bool
+		eval(`(() => { const a = document.querySelector("ol.log li .fields a"); if (!a) return false;
+			const r = a.getBoundingClientRect(); return r.width > 0 && r.height > 0; })()`, &visible)
+		if !visible {
+			dump()
+			t.Fatal("the matching row's link isn't visible")
+		}
+		shot("desktop-fields")
+	})
+
 	t.Run("phone layout", func(t *testing.T) {
 		if err := run(chromedp.EmulateViewport(390, 844)); err != nil {
 			t.Fatal(err)
@@ -249,6 +332,18 @@ func TestLogViewer(t *testing.T) {
 		shot("phone")
 		if overflow {
 			t.Fatal("page scrolls horizontally at phone width")
+		}
+		// The search for "sign" is still on, so the long URL is on screen: it
+		// wraps onto several lines, as one link, inside the screen.
+		var link struct {
+			Lines        int
+			Right, Width float64
+		}
+		eval(`(() => { const a = document.querySelector("ol.log li .fields a");
+			return {lines: a.getClientRects().length, right: a.getBoundingClientRect().right, width: window.innerWidth}; })()`, &link)
+		if link.Lines < 2 || link.Right > link.Width {
+			dump()
+			t.Fatalf("the URL at 390px: %d lines, right edge %v of %v; want it wrapped inside the screen", link.Lines, link.Right, link.Width)
 		}
 		// Each toolbar button must be the element a tap on its centre reaches.
 		var covered []string

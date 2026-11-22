@@ -53,7 +53,8 @@ sources:
         <time>{{.time}}</time>
         <b class="src">{{.source}}</b>
         <small class="lvl">{{.level}}</small>
-        <span class="msg">{{.msg}}</span>
+        <span class="text"><span class="msg">{{linkify .msg}}</span>
+          <span class="fields">{{range $k, $v := .fields}}<span>{{$k}}={{linkify $v}}</span> {{end}}</span></span>
         <small class="std">{{.stream}}</small>
       </li>
     {{end}}
@@ -67,10 +68,14 @@ sources:
 /* content-visibility skips layout and paint for rows scrolled out of view */
 .log li { content-visibility: auto; contain-intrinsic-size: auto 1.6rem; display: grid; grid-template-columns: 7.5rem 4.5rem 3.5rem 1fr auto; gap: .5rem; overflow-wrap: anywhere; }
 .log .std { visibility: hidden; }
+/* Each field after the message, as key=value, muted. The row's
+   overflow-wrap: anywhere keeps a long URL from widening the page. */
+.log .fields span { margin-left: .75rem; color: var(--pico-muted-color); }
 .log :is(.stream-stderr, .stream-system) .std { visibility: visible; }
 @media (max-width: 600px) {
   .log li { grid-template-columns: auto auto 1fr; }
   .log .src { display: none; }
-  .log .msg { grid-column: 1 / -1; grid-row: 2; }
+  .log .text { grid-column: 1 / -1; grid-row: 2; }
+  .log .fields span { display: block; margin-left: 0; }
 }
 </style>
