@@ -1,0 +1,29 @@
+# The requests TestHTTP sends. HOST is replaced with the test server's address.
+@host = HOST
+@token = {{$processEnv OFE2E_TOKEN}}
+
+### List users
+GET {{host}}/users
+Accept: application/json
+
+### Create user
+POST {{host}}/users
+Authorization: Bearer {{token}}
+# a comment between headers
+Content-Type: application/json
+
+{
+  "name": "Ada <script>alert(1)</script>"
+}
+
+### Big
+GET {{host}}/big
+
+### Redirect
+GET {{host}}/redirect
+
+### Unset
+GET {{host}}/users/{{nope}}
+
+### Refused
+GET http://127.0.0.1:1/
