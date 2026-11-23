@@ -1,6 +1,6 @@
 # Roadmap
 
-These are the next 20 apps to build, most needed first. We'll take them one at a time. Each app gets a plan, the plan gets approved, and then the app gets built. When an app needs something tinkerdown can't do yet, we add it to tinkerdown as part of that app's work.
+These are the next 20 apps to build, most needed first. We'll take them one at a time. Each app gets a plan in [plans/](plans/README.md), the plan gets approved, and then the app gets built. When an app needs something tinkerdown can't do yet, we add it to tinkerdown as part of that app's work.
 
 An app makes this list when developers need a screen for the job but often skip the existing one because it's too big. That's usually a desktop app with accounts and workspaces, or a terminal UI with many keys to learn.
 
