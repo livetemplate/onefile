@@ -16,7 +16,7 @@ In a plan, a path under a `tinkerdown:` or `livetemplate:` heading is in that re
 ## Rules every app follows
 
 - **One file.** The app is `<app>/index.md`, and the user downloads nothing else (user, 2026-11-23).
-- **Commands come from flags.** A page served from its URL declares only `merge` sources. Every command comes from the user's own `--source` and `--action` flags, as written in the app's README.
+- **Commands come from the user.** A page served from its URL declares only `merge` sources. Every command comes from the user's own `--source` and `--action` flags, as written in the app's README. When the commands are long, the README also gives them as a `--config` file of the user's own, which a page from a URL reads too (checked 2026-11-23, [http](2026-11-22-http.md)).
 - **Tools already on the machine.** Commands use what's already installed, such as `sh`, `curl` and `awk`, or the service's own CLI (`docker`, `gh`, `kubectl`). A tool the user must install for this app alone doesn't qualify (user, 2026-11-23).
 - **tinkerdown stays generic.** Nothing in tinkerdown knows the app's tool or protocol, and tinkerdown never does the tool's job: for `http` it starts curl and never sends a request itself (user, 2026-11-23). What an app is missing gets built upstream as a general feature.
 - **Clicks, not links, run commands with side effects.** Reloads, Back and shared links replay a URL, so a URL never starts a command that changes anything.
@@ -28,7 +28,7 @@ In a plan, a path under a `tinkerdown:` or `livetemplate:` heading is in that re
 - A per-row `{{if}}` ends row-by-row updates. Give each row the same markup, and show or hide parts with CSS on a class from the row's fields ([containers](2026-11-21-containers.md), Phase 4).
 - Key rows by a field that stays the same across updates (`key`), never by `seq`, which changes on every update ([test-runner](2026-11-21-test-runner.md), Phase 0).
 - `in` and `drop` compare numbers as `fmt.Sprint` prints them, so a large numeric ID never matches. Emit IDs as strings ([tinkerdown#353](https://github.com/livetemplate/tinkerdown/issues/353)).
-- Because a `--source` flag can't set `restart`, a command that finishes printing ends with `exec tail -f /dev/null`. Otherwise it's restarted and prints everything again ([tinkerdown#354](https://github.com/livetemplate/tinkerdown/issues/354)).
+- Because a `--source` flag can't set `restart`, a command that finishes printing ends with `exec tail -f /dev/null`. Otherwise it's restarted and prints everything again ([tinkerdown#354](https://github.com/livetemplate/tinkerdown/issues/354)). A source in a `--config` file can set `restart: never` instead.
 - `params` values are checked one by one, not as one row. When several must come from the same row, join them into one field ([tinkerdown#360](https://github.com/livetemplate/tinkerdown/issues/360)).
 - A failing poll should still show on the page. Join the tool's error into one stderr line, key it `[source, ""]`, and remove it with `drop` when the next poll prints `{"cleared":true}` ([ci](2026-11-22-ci.md), [tinkerdown#361](https://github.com/livetemplate/tinkerdown/issues/361)).
 - An action's error is cleared by the block's next push, so e2e tests check refusals in the server log ([tinkerdown#359](https://github.com/livetemplate/tinkerdown/issues/359)).
