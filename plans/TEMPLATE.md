@@ -41,6 +41,18 @@ Say that the audits can change the details.
 Put the app's own choices first, then each upstream feature's.
 -->
 
+## Security
+
+<!--
+Answer each question, one or two lines. Write "none" when nothing applies, never leave one out. Each answer that names a protection needs an acceptance criterion that tests it.
+- What runs: each command the flags start, and whether it can change anything (delete, restart, send, spend).
+- Values from the browser: each `params` and `data-*` value a command gets, and what checks it (`in`, `case` patterns, the `TD_` rules).
+- What a hand-made message or a replayed URL could make run, beyond what the buttons offer.
+- Secrets: what can reach the page, the WebSocket frames or a screenshot (tokens, headers, log lines), and what keeps the rest on the server.
+- Untrusted text: which values come from outside (logs, responses, titles), and where they're rendered.
+- What the README must warn about.
+-->
+
 ## Files
 
 onefile (worktree `.worktrees/<app>`):
