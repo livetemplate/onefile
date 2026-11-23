@@ -33,6 +33,7 @@ In a plan, a path under a `tinkerdown:` or `livetemplate:` heading is in that re
 - A failing poll should still show on the page. Join the tool's error into one stderr line, key it `[source, ""]`, and remove it with `drop` when the next poll prints `{"cleared":true}` ([ci](2026-11-22-ci.md), [tinkerdown#361](https://github.com/livetemplate/tinkerdown/issues/361)).
 - An action's error is cleared by the block's next push, so e2e tests check refusals in the server log ([tinkerdown#359](https://github.com/livetemplate/tinkerdown/issues/359)).
 - A tool's real output differs from its docs. `gh run view --log-failed` printed whole job logs, `UNKNOWN STEP` in every line and a byte-order mark ([ci](2026-11-22-ci.md)). Audit the real output with the tool's version and the date, and build the test fixtures from it.
+- Every key of a row becomes template state, so a row can't carry a secret. Values a command needs but the page mustn't see are kept as a row's private values (`Hub.Private`), which only a click passes on ([http](2026-11-22-http.md), Phase 1).
 - tinkerdown's docs have listed flags and functions that don't exist ([log-fields](2026-11-22-log-fields.md), Phase 2). Check a docs page against the code before relying on it.
 
 ## Checks every app passes
