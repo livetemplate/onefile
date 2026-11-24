@@ -69,9 +69,9 @@ Apps | Build your own | Remix one | Share with your team
 - Only `github.com` for now.
   alternative: also gitlab.com and codeberg.org
   because: every onefile app and every user so far is on GitHub. A second host is one more expansion rule when someone asks (G1).
-- When the argument names an existing local path, the local path wins.
-  alternative: a short name always wins
-  because: GOPATH-style checkouts (`~/go/src/github.com/...`) are real local directories, and serving one must keep working
+- A bare `github.com/...` is always a short name. A local checkout at that path is served as `./github.com/...` or with `file://` (user, 2026-11-24).
+  alternative: an existing local path wins, which Phase 3 first shipped
+  because: an untrusted checkout could hold a directory of that name. Its page would be served as a local page, without the pin or `checkRemotePage`, and with the line's `--allow-exec` (found by the security review of tinkerdown#382)
 - A short name changes only how the URL is written. After expansion it is an ordinary page URL: the same fetch, redirect checks, size limit, `#sha256=` pin and `checkRemotePage`.
   alternative: none considered
 - Errors and the pin line show both the short name and the URL it expanded to, and the pin line keeps the short form (`github.com/…/http@<ref>#sha256=…`).
@@ -202,7 +202,7 @@ tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
   - `github.com/o/r/doc.md`
   - `github.com/o/r` (root `index.md`)
   - `#sha256=` after a short name
-  - an existing local `github.com/...` directory still served locally
+  - a local `github.com/...` directory doesn't take over the short name, and `./github.com/...` serves it
   - refusals for `github.com/o` (no repo), `..`, `?`, `%` and an empty ref
   - an error message that names both the short name and the URL
 - [ ] The same package covers plain commands and page flags:
