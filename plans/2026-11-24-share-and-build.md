@@ -24,7 +24,7 @@ What's missing:
 | Run an app | `tinkerdown serve github.com/livetemplate/onefile/http …` | Phase 3, Phase 4 |
 | Check that a teammate's line is safe before running it | README "Safe to share": what a page from a URL can't do. Every command it runs is written in the line itself. | Phase 1 |
 | Share an app, or a page of your own, with a teammate | one line, with the team's sources in a committed `--config` file, pinned by `@<commit>` or `#sha256=` | Phase 1 (config, pin), Phase 3 (short name) |
-| Build a page over your own command with an LLM | "Read AGENTS.md and build me a page over `<command>`", and the page serves on the first or second try | Phase 2 |
+| Build a page over your own command with an LLM | "Read AGENTS.md and build me a page over `<command>`", and the page serves on the first or second try | Phase 2, tested on db in Phase 5 |
 | Remix an app | copy `index.md` into your repo, edit it, keep your commands in a `--config` file, and publish the page at `github.com/you/repo/app` | Phase 1 (README section), Phase 2 (guide) |
 
 The top of the README after Phase 1 (on a phone it wraps; nothing in it is wider than a sentence):
@@ -79,8 +79,9 @@ Apps | Build your own | Remix one | Share with your team
 - `AGENTS.md` stays one file with two parts, "Run an app" and "Build an app", so one link serves an LLM for either job.
   alternative: a separate `BUILD.md`
   because: the user asked for one file to point an LLM at
-- The build guide is written for someone building a page in their own repo, not for contributing to onefile. Contributing keeps its own process in [plans/README.md](README.md).
-  alternative: none considered
+- We use the guide ourselves. It is written for someone building a page in their own repo, and onefile's own apps are built from it too. plans/README keeps only the review process, and its build step says to build the page by following AGENTS.md (user, 2026-11-24).
+  alternative: a separate build guide for onefile's own apps
+  because: a guide we don't use goes stale, and our next app shows where it falls short
 - The page-building pitfalls move from `plans/README.md` into the build guide, and plans/README links to them.
   alternative: keep them in plans/README and link from the guide
   because: they're about building a page, which is the guide's job. Each fact stays in one place.
@@ -98,10 +99,10 @@ Apps | Build your own | Remix one | Share with your team
   - not for production monitoring
 
   alternative: none considered
-- The guide is tested by fresh agents. Two subagents with no other context each get only `AGENTS.md` and one prompt: a page over `du` (roadmap #13, disk) and a page over `ps` and `lsof` (roadmap #5, top). Their pages are thrown away. Where they get stuck becomes edits to the guide.
-  Each runs in an empty temporary directory and is told not to read outside it. It still inherits the global agent instructions, which Results records as a limit of the test.
-  alternative: build `db`, the next roadmap app, from the guide
-  because: `db` needs its own plan and review. A throwaway page tests the guide without one.
+- The guide is tested on `db`, the next roadmap app (user, 2026-11-24). After db's plan is approved through the usual process, a fresh subagent builds the page from `AGENTS.md` and that plan alone. Where it gets stuck becomes edits to the guide, made in the db PR.
+  The subagent works in db's worktree and is told not to read other plans or apps' source. It still inherits the global agent instructions, which Results records as a limit of the test.
+  alternative: two throwaway pages over `du` and `ps`, built before db
+  because: a real app is a stronger test than a page we throw away
 - Short names ship with tinkerdown's next batched release, not a release of their own (user, 2026-11-24). Phase 4 switches the onefile docs over after that release.
   alternative: release right after Phase 3
   because: the user asked for fewer, larger releases
@@ -120,7 +121,7 @@ Apps | Build your own | Remix one | Share with your team
 onefile (worktree `.worktrees/share-and-build`):
 - `README.md`: the pitch, why, what it isn't, how sharing is safe, "Share with your team" (`--config` plus a pin) and "Remix an app". Short names arrive in Phase 4.
 - `AGENTS.md`: "Run an app" (today's steps, for any app, not only logs) and "Build an app" (the recipe, the patterns, the pitfalls, publishing your page at its short name).
-- `plans/README.md`: the pitfalls section is replaced by a link to AGENTS.md.
+- `plans/README.md`: the pitfalls section is replaced by a link to AGENTS.md, and step 5 of "How an app gets built" says to build the page by following AGENTS.md.
 - each `<app>/README.md`, `ROADMAP.md`: short names in Phase 4.
 - `e2e/*_test.go`: Phase 4. Each test's URL swap matches the short name instead of the raw URL.
 - `plans/2026-11-22-http.md`: the pitfalls link at line 220 points at AGENTS.md.
@@ -138,7 +139,7 @@ tinkerdown (Phase 3, worktree `.worktrees/short-names`):
 |---|---|---|---|---|
 | A1 | assumption | `raw.githubusercontent.com` serves a tag in place of `<ref>` as it does a branch and a short commit. | low | open (Phase 3) |
 | A2 | assumption | Every app's README command works with a `--config` file in place of its `--source` and `--action` flags (containers and ci take actions). | medium | open (Phase 1) |
-| R1 | risk | The fresh agents still fail after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | open (Phase 2) |
+| R1 | risk | The fresh agent still can't build db after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | open (Phase 5) |
 | R2 | risk | Raw GitHub caches a branch for about five minutes, so a teammate can get an older page right after a push. Mitigation: shared lines use `@<commit>`. | low | accepted |
 | G1 | gap | Hosts other than github.com. | low | unowned |
 
@@ -157,7 +158,7 @@ tinkerdown (Phase 3, worktree `.worktrees/short-names`):
 - [ ] tinkerdown's full suite (`go test -timeout 40m ./...`) and pre-commit pass.
 - [ ] `cd e2e && go test ./...` in onefile passes with each app's README command in its short-name form, after Phase 4. The tests swap the short name for a local `httptest` URL as they swap the raw URL today, so they stay offline. The expansion itself is covered by tinkerdown's unit tests, and the real fetch by the manual run.
 - [ ] One manual run of each changed README command from GitHub by its short name, recorded in Results.
-- [ ] Two fresh subagents, given only `AGENTS.md`, each build a page that serves and shows live data, checked in Docker Chrome with screenshots. Their prompts and how many tries each took are in Results.
+- [ ] A fresh subagent, given only `AGENTS.md` and db's approved plan, builds a db page that passes `cd e2e && go test -run TestDB ./...`. Where it got stuck, and how many tries it took, are in Results.
 - [ ] `grep -rn 'raw.githubusercontent' README.md AGENTS.md */README.md` finds only the "what a short name expands to" line after Phase 4.
 - [ ] Each safety guarantee in the README links to the tinkerdown code or test that enforces it (`checkRemotePage` and its tests, the `--host` default, the `#sha256=` check), and each link opens.
 - [ ] `prereview check` passes on every changed doc.
@@ -188,8 +189,8 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 ### Phase 2: the build guide (onefile)
 
 - Audit: read the five apps' pages and plans, and list each pattern and pitfall that a new page needs.
-- Implementation: `AGENTS.md` and `plans/README.md` per the Files list. Then run the two fresh-agent tests, edit the guide where they got stuck, and run them again.
-- Acceptance: the fresh-agent criterion, and `prereview check`.
+- Implementation: `AGENTS.md` and `plans/README.md` per the Files list.
+- Acceptance: `prereview check`, and plans/README has no page-building advice left that isn't in AGENTS.md.
 - Learn:
 
 ### Phase 3: short names (tinkerdown)
@@ -206,6 +207,13 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 - Acceptance: the onefile e2e and grep criteria.
 - Learn:
 
+### Phase 5: build db from the guide (onefile)
+
+- Starts after db's plan is approved. It can run before or after Phases 3 and 4.
+- Implementation: a fresh subagent builds db from `AGENTS.md` and db's plan. Guide fixes go in the db PR.
+- Acceptance: the db criterion.
+- Learn:
+
 ## Results
 
-<!-- Filled in after Phase 4: the fresh-agent runs, and what each assumption turned out to be. -->
+<!-- Filled in after Phase 5: the db build by a fresh agent, and what each assumption turned out to be. -->
