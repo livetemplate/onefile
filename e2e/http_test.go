@@ -308,18 +308,15 @@ func TestHTTP(t *testing.T) {
 			chromedp.Click(`[data-testid="send-1"]`, chromedp.ByQuery)); err != nil {
 			t.Fatal(err)
 		}
-		deadline := time.Now().Add(10 * time.Second)
-		for !strings.Contains(serverLog.String(), "value entry is not listed") && time.Now().Before(deadline) {
-			time.Sleep(100 * time.Millisecond)
-		}
-		if !strings.Contains(serverLog.String(), "value entry is not listed") {
-			dump()
-			t.Fatal("the server log doesn't show the refusal")
+		for deadline := time.Now().Add(10 * time.Second); !strings.Contains(serverLog.String(), "value entry is not listed"); time.Sleep(100 * time.Millisecond) {
+			if time.Now().After(deadline) {
+				dump()
+				t.Fatal("the server log doesn't show the refusal")
+			}
 		}
 		if n := total(); n != before {
 			t.Fatalf("the API got %d requests after a hand-made click", n-before)
 		}
-		run(chromedp.Evaluate(`document.querySelector('[data-testid="send-1"]').dataset.entry = "1"`, nil))
 	})
 
 	t.Run("a reload and Back send nothing more", func(t *testing.T) {
@@ -387,9 +384,8 @@ func TestHTTP(t *testing.T) {
 		if err := run(chromedp.Navigate("about:blank")); err != nil {
 			t.Fatal(err)
 		}
-		port := regexp.MustCompile(`:(\d+)$`).FindStringSubmatch(api.URL)[1]
 		deadline := time.Now().Add(30 * time.Second)
-		for exec.Command("pgrep", "-f", "curl.*127.0.0.1:"+port).Run() == nil {
+		for exec.Command("pgrep", "-f", "curl.*"+strings.TrimPrefix(api.URL, "http://")).Run() == nil {
 			if time.Now().After(deadline) {
 				t.Fatal("a curl the page started is still running 30 s after it left")
 			}

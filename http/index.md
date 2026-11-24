@@ -55,7 +55,7 @@ sources:
 <aside class="resp" lvt-source="response" aria-label="Response">
   <header>
     <b>Response</b>
-    <small data-testid="state" aria-busy="{{if .Running}}true{{else}}false{{end}}">{{if .Running}}sending…{{else}}{{len .Data}} lines{{end}}</small>
+    <small data-testid="state" aria-busy="{{.Running}}">{{if .Running}}sending…{{else}}{{len .Data}} lines{{end}}</small>
   </header>
   {{if .Error}}<p data-testid="resp-error"><mark>{{.Error}}</mark></p>{{end}}
   {{if not .Data}}<p class="hint" data-testid="hint">Press Send on a request.</p>{{end}}
@@ -63,7 +63,7 @@ sources:
     {{range .Data}}
       <li data-key="{{.seq}}" data-exit="{{.fields.exitcode}}" class="s-{{.stream}}">
         <b class="sum">{{.fields.http_code}} · {{printf "%.3f" .fields.time_total}} s</b>
-        <pre class="line">{{linkify (jsonindent .line)}}</pre>
+        <span class="line">{{linkify (jsonindent .line)}}</span>
       </li>
     {{end}}
   </ol>
@@ -91,16 +91,11 @@ sources:
    only its line. A per-row {{if}} would make rows differ. */
 .body { display: flex; flex-direction: column; padding: 0; margin: 0; list-style: none; }
 .body li { margin: 0; padding: 0; }
-/* Each line is its own pre element: drop the code-block box tinkerdown
-   gives one, so the lines read as one response. */
-.body .line { margin: 0; padding: 0 .5rem; border: 0; border-radius: 0; box-shadow: none; background: none;
-  color: var(--pico-color); white-space: pre-wrap; overflow-wrap: anywhere; font: .8rem/1.5 var(--pico-font-family-monospace); }
+.body .line { display: block; padding: 0 .5rem; white-space: pre-wrap; overflow-wrap: anywhere; font: .8rem/1.5 var(--pico-font-family-monospace); }
 .body .line:empty::before { content: "\200b"; } /* keep a blank line's height */
 .body .line a { display: inline; border: 0; }
-.body .sum { display: none; }
 .body li:not([data-exit=""]) { order: -1; margin-bottom: .5rem; }
-.body li:not([data-exit=""]) .sum { display: block; }
-.body li:not([data-exit=""]) .line { display: none; }
+.body li[data-exit=""] .sum, .body li:not([data-exit=""]) .line { display: none; }
 .body li:is(.s-stderr, .s-system) .line { color: var(--pico-del-color); }
 
 /* Wide screens: the requests on the left, the response beside them and kept
