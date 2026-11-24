@@ -23,9 +23,9 @@ What's missing:
 | Learn what onefile is and whether it fits | README: the pitch, why, what it isn't, then the apps | Phase 1 |
 | Run an app | `tinkerdown serve github.com/livetemplate/onefile/http …` | Phase 3, Phase 4 |
 | Check that a teammate's line is safe before running it | README "Safe to share": what a page from a URL can't do. Every command it runs is written in the line itself. | Phase 1 |
-| Share an app, or a page of your own, with a teammate | one line, with the team's sources in a committed `--config` file, pinned by `@<commit>` or `#sha256=` | Phase 1 (config, pin), Phase 3 (short name) |
+| Share an app, or a page of your own, with a teammate | one line with its `--source` flags, pinned by `@<commit>` or `#sha256=` | Phase 1 (pin), Phase 3 (short name) |
 | Build a page over your own command with an LLM | "Read AGENTS.md and build me a page over `<command>`". The page serves on the first or second try. | Phase 2, tested on db in Phase 5 |
-| Remix an app, by hand or with an LLM | copy `index.md` into your repo and edit it. Keep your commands in a `--config` file, and publish the page at `github.com/you/repo/app`. With an LLM: "Read AGENTS.md and change the http app to …" | Phase 1 (README section), Phase 2 (guide) |
+| Remix an app, by hand or with an LLM | copy `index.md` into your repo and edit it. Pass your commands as flags, and publish the page at `github.com/you/repo/app`. With an LLM: "Read AGENTS.md and change the http app to …" | Phase 1 (README section), Phase 2 (guide) |
 
 The top of the README after Phase 1 (on a phone it wraps; nothing in it is wider than a sentence):
 
@@ -34,8 +34,8 @@ onefile
 <the pitch, one sentence: Phase 1's user contribution>
 
   tinkerdown serve --allow-exec \
-    github.com/livetemplate/onefile/http \
-    --config http.yaml
+    github.com/livetemplate/onefile/logs \
+    --source 'api=docker logs -f api'
 
 Safe to share: the page only shows. Every command it
 runs is in the line you typed, and it listens on
@@ -73,7 +73,10 @@ Apps | Build your own | Remix one | Share with your team
 - `--config` is always a local file, never fetched. A teammate gets the config from the team's repo, or writes their own.
   alternative: `--config` from a URL or a short name
   because: a fetched config would be commands from a URL, which is what `checkRemotePage` exists to refuse
-- The guide teaches only the shareable form: the page declares a `merge` source, and the commands come from flags or a `--config` file.
+- Flags are the preferred way to run an app. The README pitch, each app's README and the guide lead with `--source` and `--action` flags. A `--config` file is the fallback for commands too long for one line (user, 2026-11-24).
+  alternative: lead with a `--config` file
+  because: a line with its flags shows every command it runs, which is the safety claim, and it needs no second file
+- The guide teaches only the shareable form: the page declares a `merge` source, and the commands come from flags.
   alternative: also teach pages that declare their own exec sources, which work locally
   because: such a page fails `checkRemotePage`, so it can never be shared by URL or short name
 - `AGENTS.md` stays one file with three parts, "Run an app", "Build an app" and "Remix an app", so one link serves an LLM for any of them (user, 2026-11-24).
@@ -112,14 +115,14 @@ Apps | Build your own | Remix one | Share with your team
 - What runs: nothing new. A short name expands to a URL, and the page behind it goes through `checkRemotePage` as today.
 - Values from the browser: none new.
 - Hand-made messages and replayed URLs: none new.
-- Secrets: none new. A `--config` file the README shows for teams holds commands, not tokens. The README says to keep tokens in the environment (`gh` and `docker` already read their own).
+- Secrets: none new. Flags and a `--config` file hold commands, not tokens. The README says to keep tokens in the environment (`gh` and `docker` already read their own).
 - Untrusted text: a short name is parsed, never passed to a shell, and § Contract's character rules refuse anything that could change the fetched path.
 - What the README must warn about: a branch name like `@main` can change under you, so a shared line should use `@<commit>` or `#sha256=`. The same `github.com/` look covers a typo-squatted owner, so check the owner before running a teammate's line.
 
 ## Files
 
 onefile (worktree `.worktrees/share-and-build`):
-- `README.md`: the pitch, why, what it isn't, how sharing is safe, "Share with your team" (`--config` plus a pin) and "Remix an app". Short names arrive in Phase 4.
+- `README.md`: the pitch, why, what it isn't, how sharing is safe, "Share with your team" (the line with its flags, plus a pin) and "Remix an app". Short names arrive in Phase 4.
 - `AGENTS.md`, in three parts:
   - "Run an app": today's steps, for any app, not only logs.
   - "Build an app": the recipe, the patterns, the pitfalls, and publishing your page at its short name.
@@ -141,7 +144,6 @@ tinkerdown (Phase 3, worktree `.worktrees/short-names`):
 | # | Type | Item | Severity | Status |
 |---|---|---|---|---|
 | A1 | assumption | `raw.githubusercontent.com` serves a tag in place of `<ref>` as it does a branch and a short commit. | low | open (Phase 3) |
-| A2 | assumption | Every app's README command works with a `--config` file in place of its `--source` and `--action` flags (containers and ci take actions). | medium | open (Phase 1) |
 | R1 | risk | The fresh agent still can't build db after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | open (Phase 5) |
 | R2 | risk | Raw GitHub caches a branch for about five minutes, so a teammate can get an older page right after a push. Mitigation: shared lines use `@<commit>`. | low | accepted |
 | G1 | gap | Hosts other than github.com. | low | unowned |
@@ -184,7 +186,7 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 
 ### Phase 1: pitch, scope and sharing (onefile)
 
-- Audit: A2. Read the README as someone who has never heard of tinkerdown, and list what they can't answer.
+- Audit: read the README as someone who has never heard of tinkerdown, and list what they can't answer.
 - Implementation: `README.md` per the Files list. **User contribution:** the one-sentence pitch at the top of the README. It's the line people decide on, and it should sound like you.
 - Acceptance: `prereview check`, and the README's commands run as written.
 - Learn:
