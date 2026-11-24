@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: nothing. Next: plan sign-off, then Phase 1.
+State — Done: plan (#13). In review: Phases 1 and 2, in one PR. Next: Phase 3.
 
 ## Context
 
@@ -37,7 +37,7 @@ The top of the README after Phase 5 (on a phone it wraps; nothing in it is wider
 
 ```
 onefile
-<the pitch, one sentence: Phase 1's user contribution>
+Generate one-file web apps for your terminal workflows. Each app runs only the commands you pass it.
 
   tinkerdown serve --allow-exec \
     github.com/livetemplate/onefile/logs \
@@ -46,8 +46,8 @@ onefile
 Safe to share: the page only shows. Every command it
 runs is in the line you typed, and it listens on
 localhost only. ...
-Why: one way to build a screen over any CLI, and
-a place to keep the tool an LLM just made you. ...
+Why: LLM tools are cheap to throw away. onefile
+makes the ones worth keeping easy to save. ...
 What it isn't: no accounts, no hosted server, ...
 
 Apps | Build your own | Remix one | Share with your team
@@ -121,12 +121,9 @@ Apps | Build your own | Remix one | Share with your team
 - Safety is the README's second section, right after the command. It lists each guarantee: a page from a URL can't run commands, read files or hold actions; every command is in the user's own line; `serve` listens on localhost; `#sha256=` pins the exact page. Each guarantee links to the tinkerdown code or test that enforces it (user, 2026-11-24).
   alternative: a safety paragraph further down, after the apps
   because: safe sharing is what sets a page apart from a shared script, and a claim with a link to its check can be verified
-- The README's "Why" gives three reasons (user, 2026-11-24):
-  - one standard way to put a screen over any CLI, so each new app takes less time than the last
-  - an app is cheap enough to use once and throw away
-  - a tool an LLM made for you, usually lost with the chat, can be kept as one small file and shared
-
-  alternative: none considered
+- The README's "Why" leads with one argument. LLMs make tools cheap enough to throw away, and onefile keeps that speed. A page captures a use case in its smallest form: its input spec (the commands, as flags) and its output spec (one file of Markdown and HTML), and nothing else. That makes a recurring workflow easy to keep, safe to share, and easy for an LLM to remix (user, 2026-11-24). Three short reasons follow: your CLI does the work, it's live, and it's lighter than the app it replaces.
+  alternative: a list of three equal reasons (one way to build, cheap to throw away, a home for an LLM's tool)
+  because: the throwaway-versus-keep contrast is the reason; the others support it
 - The README says what onefile isn't:
   - no accounts and no hosted server, because pages run on your machine at localhost
   - no stored data beyond what the tool keeps
@@ -139,6 +136,9 @@ Apps | Build your own | Remix one | Share with your team
   The subagent works in db's worktree and is told not to read other plans or apps' source. It still inherits the global agent instructions, which Results records as a limit of the test.
   alternative: two throwaway pages over `du` and `ps`, built before db
   because: a real app is a stronger test than a page we throw away
+- Phases 1 and 2 ship as one onefile PR, so the README's claims about agents ship with the guide that backs them (user, 2026-11-24).
+  alternative: a README PR, then a guide PR
+  because: the README tells readers to ask an agent for a page, and the guide is what makes that work
 - Short names, plain commands and page flags ship together in tinkerdown's next batched release, not in releases of their own (user, 2026-11-24). Phase 5 switches the onefile docs and pages over after that release.
   alternative: release after each tinkerdown phase
   because: the user asked for fewer, larger releases
@@ -160,7 +160,7 @@ onefile (worktree `.worktrees/share-and-build`):
   - "Run an app": today's steps, for any app, not only logs.
   - "Build an app": the recipe, the patterns, the pitfalls, declaring `flags:`, and publishing your page at its short name.
   - "Remix an app": copy an app by its short name, keep its patterns, change its commands and markup, and publish it under your own name.
-- `plans/README.md`: the pitfalls section is replaced by a link to AGENTS.md, and step 5 of "How an app gets built" says to build the page by following AGENTS.md.
+- `plans/README.md`: the pitfalls section and the page-building rules are replaced by links to AGENTS.md, and step 5 of "How an app gets built" says to build the page by following AGENTS.md. The e2e pitfall (tinkerdown#359) stays, since it's about onefile's tests.
 - each `<app>/index.md`: Phase 5. Declares `flags:` for its roles: `http` (`requests`, `send`), `containers` (its sources and four actions), `ci` (its sources and two actions).
 - each `<app>/README.md`, `ROADMAP.md`: short names, `--` and page flags in Phase 5.
 - `e2e/*_test.go`: Phase 5. Each test's URL swap matches the short name, and each runs its README's new command.
@@ -255,15 +255,15 @@ flags:
 
 - Audit: read the README as someone who has never heard of tinkerdown, and list what they can't answer.
 - Implementation: `README.md` per the Files list. **User contribution:** the one-sentence pitch at the top of the README. It's the line people decide on, and it should sound like you.
-- Acceptance: `prereview check`, and the README's commands run as written.
-- Learn:
+- Acceptance: `prereview check`, and the README's commands run as written. Ships in one PR with Phase 2.
+- Learn: the pitch took nine rounds. Lines that named one tool read as that tool's app, and "turn any CLI into a web app" is close to [Gooey's tagline](https://github.com/chriskiehl/Gooey). The user's line won: "Generate one-file web apps for your terminal workflows", with the safety sentence after it.
 
 ### Phase 2: the build guide (onefile)
 
 - Audit: read the five apps' pages and plans, and list each pattern and pitfall that a new page needs.
 - Implementation: `AGENTS.md` and `plans/README.md` per the Files list.
 - Acceptance: `prereview check`, and plans/README has no page-building advice left that isn't in AGENTS.md.
-- Learn:
+- Learn: five of plans/README's seven rules were page-building rules, so they moved with the pitfalls. The guide is written for tinkerdown 0.8.1, so it teaches raw URLs and `NAME=` flags. `flags:` and short names reach it in Phase 5.
 
 ### Phase 3: short names (tinkerdown)
 
