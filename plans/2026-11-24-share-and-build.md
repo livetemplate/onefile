@@ -4,7 +4,7 @@ State — Done: nothing. Next: plan sign-off, then Phase 1.
 
 ## Context
 
-onefile's pitch: put a web page over a command you already use, in minutes, and share it with a teammate as one line that's safe to run. Safety is a main selling point and gets played up (user, 2026-11-24). The repo has five apps, but the README opens with "small apps for developers" and doesn't say why to use them, what they can't do, or how to make your own.
+onefile's pitch: put a web page over a command you already use, in minutes, and share it with a teammate as one line that's safe to run. Safety is a main selling point and gets played up. It's also a small way to keep a tool an LLM made for you, which would otherwise be thrown away (user, 2026-11-24). The repo has five apps, but the README opens with "small apps for developers" and doesn't say why to use them, what they can't do, or how to make your own.
 
 Already built, so this plan only documents it:
 - **Safety.** A page from a URL may declare only `merge` sources. It can't contain actions, schedules, includes, wasm or unsafe HTML (`checkRemotePage`, tinkerdown `cmd/tinkerdown/commands/remote_page.go`). Every command comes from the `--source` and `--action` flags of the person running it.
@@ -46,7 +46,8 @@ onefile
 Safe to share: the page only shows. Every command it
 runs is in the line you typed, and it listens on
 localhost only. ...
-Why: one way to build a screen over any CLI. ...
+Why: one way to build a screen over any CLI, and
+a place to keep the tool an LLM just made you. ...
 What it isn't: no accounts, no hosted server, ...
 
 Apps | Build your own | Remix one | Share with your team
@@ -120,6 +121,12 @@ Apps | Build your own | Remix one | Share with your team
 - Safety is the README's second section, right after the command. It lists each guarantee: a page from a URL can't run commands, read files or hold actions; every command is in the user's own line; `serve` listens on localhost; `#sha256=` pins the exact page. Each guarantee links to the tinkerdown code or test that enforces it (user, 2026-11-24).
   alternative: a safety paragraph further down, after the apps
   because: safe sharing is what sets a page apart from a shared script, and a claim with a link to its check can be verified
+- The README's "Why" gives three reasons (user, 2026-11-24):
+  - one standard way to put a screen over any CLI, so each new app takes less time than the last
+  - an app is cheap enough to use once and throw away
+  - a tool an LLM made for you, usually lost with the chat, can be kept as one small file and shared
+
+  alternative: none considered
 - The README says what onefile isn't:
   - no accounts and no hosted server, because pages run on your machine at localhost
   - no stored data beyond what the tool keeps
