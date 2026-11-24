@@ -1,12 +1,63 @@
 # onefile
 
-Small apps for developers, each one a single [tinkerdown](https://github.com/livetemplate/tinkerdown) page. Run any of them straight from GitHub, without cloning:
+Generate one-file web apps for your terminal workflows. Each app runs only the commands you pass it.
+
+Run one straight from GitHub with [tinkerdown](https://github.com/livetemplate/tinkerdown), passing your own command:
 
 ```sh
-tinkerdown serve https://raw.githubusercontent.com/livetemplate/onefile/main/<app>/index.md
+tinkerdown serve --allow-exec \
+  https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md \
+  --source 'api=docker logs -f api'
 ```
 
-A page served from a URL can't run commands or read files on its own. An app that needs them, such as the log viewer, takes them as `--source` flags that you pass.
+Open http://localhost:8080 to see the logs of your `api` container, live.
+
+To generate a new one, ask your coding agent:
+
+```
+Read https://github.com/livetemplate/onefile/blob/main/AGENTS.md and build me a page over <your command>.
+```
+
+## Safe to share
+
+A page only shows. Every command it runs is in the line you typed, so you can read a teammate's line before you run it.
+
+- **A page from a URL can't run anything by itself.** It can't hold commands, actions, schedules, includes, file reads or unsafe HTML. `serve` refuses such a page before it starts ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page.go#L164), [its tests](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page_test.go#L101)).
+- **Every command comes from you.** Commands come only from your `--source` and `--action` flags, or from a `--config` file of your own, and they run only with `--allow-exec`.
+- **It stays on your machine.** `serve` listens on localhost unless you pass `--host` ([the default](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/internal/config/config.go#L1008)).
+- **You can pin the exact page.** After a fetch, `serve` prints the page's sha256. With `#sha256=<hex>` on the URL, it refuses any other content ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page.go#L145), [its test](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page_test.go#L53)).
+
+Two things are still yours to check. A branch such as `main` can change after you read it, so share a pinned line. And a URL can name a look-alike owner, so check the owner before you run a line someone sent you.
+
+## Why
+
+LLMs make tools so cheap that most are used once and thrown away. onefile keeps that speed: an LLM can write you a page in minutes, and you can throw it away just as fast.
+
+The difference is what happens when you want to keep one. A page captures a use case in its smallest form: what it takes in, the commands you pass as flags, and what it shows, one file of Markdown and HTML. Nothing else gets in.
+
+So the workflow you repeat every week is easy to keep, rerun and share, and safe to run. And because the whole use case fits in one small file, an LLM can read it and remix it into the next one.
+
+- **Your CLI does the work.** The page only shows what a tool you already trust prints.
+- **Live, not a snapshot.** The page updates as your command prints, so you watch logs, tests and CI runs happen.
+- **Lighter than the app it replaces.** No account, no workspace and no keys to learn.
+
+## What it isn't
+
+- No accounts and no hosted server: a page runs on your machine, at localhost.
+- No stored data beyond what your tool keeps.
+- Nothing to install besides tinkerdown and the tool itself.
+- One file per app, never a project to set up.
+- Not for watching production. It's for the work in front of you.
+
+## Install
+
+The apps need tinkerdown 0.8.1 or later:
+
+```sh
+brew install livetemplate/tap/tinkerdown
+# or
+go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest
+```
 
 ## Apps
 
@@ -20,22 +71,35 @@ A page served from a URL can't run commands or read files on its own. An app tha
 
 The apps planned next, most needed first, are in [ROADMAP.md](ROADMAP.md).
 
-Setting an app up with a coding agent? Point it at [AGENTS.md](AGENTS.md).
+To run, build or remix an app with a coding agent, point it at [AGENTS.md](AGENTS.md).
 
-The apps need tinkerdown 0.8.1 or later:
+## Share with your team
 
-```sh
-brew install livetemplate/tap/tinkerdown
-# or
-go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest
+Send the whole line, pinned. Run it once yourself; `serve` prints the pin:
+
+```
+Fetched https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md (sha256 3f2a…). Pin it with …/logs/index.md#sha256=3f2a…
 ```
 
-## Add an app
+Put the pinned URL in the line you send. Your teammate sees every command it runs, and gets exactly the page you checked.
+
+## Remix an app
+
+Copy an app's page, change it, and serve your copy:
+
+```sh
+curl -O https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md
+tinkerdown serve --allow-exec index.md --source 'api=docker logs -f api'
+```
+
+Keep the commands in flags, as the apps do, so your page stays safe to share. Push it to your own repo and share its raw URL the same way. An agent can do this for you from [AGENTS.md](AGENTS.md#remix-an-app).
+
+## Add an app to onefile
 
 1. Make a folder named after the app, with the page as `index.md` and a `README.md` that says what it does and what it takes.
-2. Keep the page self-contained. A page served from a URL may only declare `merge` sources, and its sources come from `--source` flags.
+2. Build the page by following [AGENTS.md](AGENTS.md#build-an-app).
 3. Add an end-to-end test as `e2e/<app>_test.go`. It can use the helpers in `e2e/helpers_test.go`, and its fixtures go in `e2e/testdata/<app>/`.
-4. Add a row to the table above.
+4. Add a row to the Apps table.
 
 ## Test
 
