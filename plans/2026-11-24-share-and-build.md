@@ -24,8 +24,8 @@ What's missing:
 | Run an app | `tinkerdown serve github.com/livetemplate/onefile/http …` | Phase 3, Phase 4 |
 | Check that a teammate's line is safe before running it | README "Safe to share": what a page from a URL can't do. Every command it runs is written in the line itself. | Phase 1 |
 | Share an app, or a page of your own, with a teammate | one line, with the team's sources in a committed `--config` file, pinned by `@<commit>` or `#sha256=` | Phase 1 (config, pin), Phase 3 (short name) |
-| Build a page over your own command with an LLM | "Read AGENTS.md and build me a page over `<command>`", and the page serves on the first or second try | Phase 2, tested on db in Phase 5 |
-| Remix an app | copy `index.md` into your repo, edit it, keep your commands in a `--config` file, and publish the page at `github.com/you/repo/app` | Phase 1 (README section), Phase 2 (guide) |
+| Build a page over your own command with an LLM | "Read AGENTS.md and build me a page over `<command>`". The page serves on the first or second try. | Phase 2, tested on db in Phase 5 |
+| Remix an app, by hand or with an LLM | copy `index.md` into your repo and edit it. Keep your commands in a `--config` file, and publish the page at `github.com/you/repo/app`. With an LLM: "Read AGENTS.md and change the http app to …" | Phase 1 (README section), Phase 2 (guide) |
 
 The top of the README after Phase 1 (on a phone it wraps; nothing in it is wider than a sentence):
 
@@ -76,7 +76,7 @@ Apps | Build your own | Remix one | Share with your team
 - The guide teaches only the shareable form: the page declares a `merge` source, and the commands come from flags or a `--config` file.
   alternative: also teach pages that declare their own exec sources, which work locally
   because: such a page fails `checkRemotePage`, so it can never be shared by URL or short name
-- `AGENTS.md` stays one file with two parts, "Run an app" and "Build an app", so one link serves an LLM for either job.
+- `AGENTS.md` stays one file with three parts, "Run an app", "Build an app" and "Remix an app", so one link serves an LLM for any of them (user, 2026-11-24).
   alternative: a separate `BUILD.md`
   because: the user asked for one file to point an LLM at
 - We use the guide ourselves. It is written for someone building a page in their own repo, and onefile's own apps are built from it too. plans/README keeps only the review process, and its build step says to build the page by following AGENTS.md (user, 2026-11-24).
@@ -120,7 +120,10 @@ Apps | Build your own | Remix one | Share with your team
 
 onefile (worktree `.worktrees/share-and-build`):
 - `README.md`: the pitch, why, what it isn't, how sharing is safe, "Share with your team" (`--config` plus a pin) and "Remix an app". Short names arrive in Phase 4.
-- `AGENTS.md`: "Run an app" (today's steps, for any app, not only logs) and "Build an app" (the recipe, the patterns, the pitfalls, publishing your page at its short name).
+- `AGENTS.md`, in three parts:
+  - "Run an app": today's steps, for any app, not only logs.
+  - "Build an app": the recipe, the patterns, the pitfalls, and publishing your page at its short name.
+  - "Remix an app": copy an app by its short name, keep its patterns, change its commands and markup, and publish it under your own name.
 - `plans/README.md`: the pitfalls section is replaced by a link to AGENTS.md, and step 5 of "How an app gets built" says to build the page by following AGENTS.md.
 - each `<app>/README.md`, `ROADMAP.md`: short names in Phase 4.
 - `e2e/*_test.go`: Phase 4. Each test's URL swap matches the short name instead of the raw URL.
