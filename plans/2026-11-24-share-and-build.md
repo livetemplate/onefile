@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13). In review: Phases 1 and 2, in one PR. Next: Phase 3.
+State — Done: plan (#13), Phases 1 and 2 (#14). In review: Phase 3 (tinkerdown#382). Next: Phase 4.
 
 ## Context
 
@@ -186,7 +186,7 @@ tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
 
 | # | Type | Item | Severity | Status |
 |---|---|---|---|---|
-| A1 | assumption | `raw.githubusercontent.com` serves a tag in place of `<ref>` as it does a branch and a short commit. | low | open (Phase 3) |
+| A1 | assumption | `raw.githubusercontent.com` serves a tag in place of `<ref>` as it does a branch and a short commit. | low | verified 2026-11-24: `HEAD`, a tag, a short commit and a branch all return 200 |
 | A2 | assumption | `serve` can load the page before it resolves page flags: a page from a URL is fetched, and a local page parsed, before sources are checked. | medium | open (Phase 4) |
 | A3 | assumption | No published app README or test passes a flag that `serve` ignores today, so refusing unknown flags breaks none of them. | medium | open (Phase 4) |
 | R1 | risk | The fresh agent still can't build db after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | open (Phase 6) |
@@ -270,7 +270,7 @@ flags:
 - Audit: A1. Trace `parsePageArg` → `fetchRemotePage` → the pin line, and confirm a short name reaches every place that prints `shown`.
 - Implementation: per the tinkerdown Phase 3 Files list. Merge to main; it ships with tinkerdown's next release.
 - Acceptance: the short-name criteria.
-- Learn:
+- Learn: the expanded URL goes back through the URL parser, so the fetch and page checks needed no change. Three root e2e tests in tinkerdown run `./tinkerdown`, so a fresh worktree needs `go build -o tinkerdown ./cmd/tinkerdown` before the full suite.
 
 ### Phase 4: plain commands and page flags (tinkerdown)
 
