@@ -373,7 +373,8 @@ func TestCI(t *testing.T) {
 
 	t.Run("a failed poll shows gh's message until the next good one", func(t *testing.T) {
 		write("fail", "")
-		waitJS(t, "the error row", `[...document.querySelectorAll("ol.runs li.stream-stderr")].some(li => li.textContent.includes("HTTP 403: API rate limit exceeded Try again later."))`)
+		// Both repos poll the failing gh, in either order: wait for api's row.
+		waitJS(t, "api's error row", `[...document.querySelectorAll("ol.runs li.stream-stderr")].some(li => li.textContent.includes("api: HTTP 403: API rate limit exceeded Try again later."))`)
 		var errRows int
 		eval(t, `[...document.querySelectorAll("ol.runs li.stream-stderr")].filter(li => li.textContent.includes("api:")).length`, &errRows)
 		if errRows != 1 {
