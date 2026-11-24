@@ -14,7 +14,7 @@ tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/one
   --source 'send=printf "%s" "$TD_headers" | curl -sS -i --max-time 30 -X "$TD_method" -H @- ${TD_body:+--data-binary "$TD_body"} -w "\n%{json}\n" -- "$TD_url"'
 ```
 
-Then open http://localhost:8080. It needs tinkerdown 0.8.0 or later, and curl 7.75 or later.
+Then open http://localhost:8080. It needs tinkerdown 0.8.1 or later, and curl 7.75 or later.
 
 | Flag | What it does |
 |------|--------------|
