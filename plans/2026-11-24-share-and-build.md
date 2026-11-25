@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0), A4's fix (tinkerdown#387, released in v0.9.1). In review: Phase 5 (#15). Next: Phase 6.
+State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0), A4's fix (tinkerdown#387, released in v0.9.1). Phase 5 (#15). Next: Phase 6, once [db's plan](2026-11-25-db.md) is signed off.
 
 ## Context
 
