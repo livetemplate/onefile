@@ -24,7 +24,7 @@ A page only shows. Every command it runs is in the line you typed, so you can re
 
 - **A page from a URL can't run anything by itself.** It can't hold commands, actions, schedules, includes, file reads or unsafe HTML. `serve` refuses such a page before it starts ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page.go#L242), [its tests](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page_test.go#L183)).
 - **Every command comes from you.** Commands come only from what you pass: the command after `--`, your `--source` and `--action` flags, or a `--config` file of your own. They run only with `--allow-exec`.
-- **It stays on your machine.** `serve` listens on localhost unless you pass `--host` ([the default](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/internal/config/config.go#L1024)).
+- **It stays on your machine.** `serve` listens on localhost unless you pass `--host` ([the default](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/internal/config/config.go#L1025)).
 - **You can pin the exact page.** After a fetch, `serve` prints the page's sha256. With `#sha256=<hex>` after the page's name, it refuses any other content ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page.go#L223), [its test](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page_test.go#L135)).
 
 Two things are still yours to check. A page's name without a pin follows the repo's default branch, which can change after you read it, so share a pinned line. And a name can hold a look-alike owner, so check the owner before you run a line someone sent you.

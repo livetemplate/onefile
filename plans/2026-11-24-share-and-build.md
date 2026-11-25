@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0). In review: tinkerdown#387 (a fetched page's command directory, for v0.9.1) and Phase 5. Next: v0.9.1, then Phase 6.
+State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0), A4's fix (tinkerdown#387, released in v0.9.1). In review: Phase 5 (#15). Next: Phase 6.
 
 ## Context
 
@@ -282,4 +282,13 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 
 ## Results
 
-<!-- Filled in after Phase 6: the db build by a fresh agent, and what each assumption turned out to be. -->
+Phase 5's manual run, 2026-11-25. Each changed README command ran with tinkerdown v0.9.1, from GitHub by its short name, checked in Chrome. The pages were main's at the time, from before this PR; they differ only in their comments and http's hint.
+- logs: as written, with a busybox container named `api` and a temp `app.log`. Tabs `All|api|app`, three rows.
+- tests: from the sample module, with a fake `watchexec` (not installed here) that runs `go test` once. Nine rows, the failure's output under its row.
+- http: with a one-request `.http` file pointing at a local server. The row and its Send button showed.
+- containers: as written, against this machine's Docker. Five containers, `api` among them.
+- ci: `OWNER/REPO` set to `livetemplate/tinkerdown`, since onefile has no Actions runs. 30 runs, the v0.9.1 release first. An earlier try, with the API quota spent, showed `gh`'s rate-limit message as the page's error row, as the README says.
+
+No console errors in any of them.
+
+<!-- Phase 6 adds the db build by a fresh agent. -->
