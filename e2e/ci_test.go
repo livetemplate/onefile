@@ -115,7 +115,7 @@ func TestCI(t *testing.T) {
 	port := freePort(t)
 	cmdline := readmeCommandOf(t, "../ci/README.md")
 	cmdline = replaceOnce(t, cmdline, "tinkerdown serve", bin+" serve --port "+fmt.Sprint(port))
-	cmdline = replaceOnce(t, cmdline, "https://raw.githubusercontent.com/livetemplate/onefile/main/ci/index.md", pages.URL+"/index.md")
+	cmdline = replaceOnce(t, cmdline, "github.com/livetemplate/onefile/ci", pages.URL+"/index.md")
 	cmdline = replaceOnce(t, cmdline, "'myapp=", "'api=")
 	cmdline = replaceOnce(t, cmdline, "OWNER/REPO", "acme/api")
 	feed := regexp.MustCompile(`--source 'api=[^']*'`).FindString(cmdline)

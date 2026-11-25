@@ -1,7 +1,7 @@
 ---
 title: HTTP
 # Pass your .http file and the curl command when you serve this page; see README.md for the full command:
-#   tinkerdown serve --allow-exec . --source 'api=http:./api.http' --source 'send=…curl…'
+#   tinkerdown serve --allow-exec . --source http:./api.http --source 'send=…curl…'
 sources:
   requests:
     type: merge
@@ -10,7 +10,7 @@ sources:
     accepts:
       kinds: [http]
       min: 1
-      hint: "--source api=http:./your.http; see the README"
+      hint: "--source http:./your.http; see the README"
   response:
     type: merge
     inputs: [send]

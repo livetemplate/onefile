@@ -61,7 +61,7 @@ func TestContainers(t *testing.T) {
 	port := freePort(t)
 	cmdline := readmeCommandOf(t, "../containers/README.md")
 	cmdline = replaceOnce(t, cmdline, "tinkerdown serve", bin+" serve --port "+fmt.Sprint(port))
-	cmdline = replaceOnce(t, cmdline, "https://raw.githubusercontent.com/livetemplate/onefile/main/containers/index.md", pages.URL+"/index.md")
+	cmdline = replaceOnce(t, cmdline, "github.com/livetemplate/onefile/containers", pages.URL+"/index.md")
 	cmdline = replaceOnce(t, cmdline, "docker ps -a ", "docker ps -a --filter label="+label+" ")
 	cmdline = replaceOnce(t, cmdline, "exec docker events ", "exec docker events --filter label="+label+" ")
 	url, serverLog := serveCmd(t, exec.Command("bash", "-c", "exec "+cmdline), port)

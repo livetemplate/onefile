@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13). In review: Phases 1 and 2, in one PR. Next: Phase 3.
+State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0), A4's fix (tinkerdown#387, released in v0.9.1). In review: Phase 5 (#15). Next: Phase 6.
 
 ## Context
 
@@ -27,7 +27,7 @@ What's missing:
 |---|---|---|
 | Learn what onefile is and whether it fits | README: the pitch, why, what it isn't, then the apps | Phase 1 |
 | Run an app | `tinkerdown serve github.com/livetemplate/onefile/logs -- docker logs -f api` | Phases 3–5 |
-| See what an app takes | `tinkerdown serve github.com/livetemplate/onefile/http --help` lists the page's own flags, such as `--requests` and `--send`, each with one line of help | Phase 4 |
+| See what an app takes | `tinkerdown serve github.com/livetemplate/onefile/http --help` lists the sources and actions the page takes by name, such as `send`, and its `accepts` hint | Phase 4 |
 | Check that a teammate's line is safe before running it | README "Safe to share": what a page from a URL can't do. Every command it runs is written in the line itself. | Phase 1 |
 | Share an app, or a page of your own, with a teammate | one line with its commands, pinned by `@<commit>` or `#sha256=` | Phase 1 (pin), Phases 3–4 |
 | Build a page over your own command with an LLM | "Read AGENTS.md and build me a page over `<command>`". The page serves on the first or second try. | Phase 2, tested on db in Phase 6 |
@@ -55,7 +55,7 @@ Apps | Build your own | Remix one | Share with your team
 
 ## Decisions
 
-- One plan covers the onefile docs and the tinkerdown changes: short names, plain commands and page flags (user, 2026-11-24).
+- One plan covers the onefile docs and the tinkerdown changes: short names and plain commands (user, 2026-11-24).
   alternative: a separate tinkerdown plan
 - The short-name form is Go-style: `github.com/<owner>/<repo>/<path>[@<ref>]` (user, 2026-11-24).
   alternative: `gh:<owner>/<repo>/<path>`, or a name for this repo only (`onefile/http`)
@@ -69,15 +69,15 @@ Apps | Build your own | Remix one | Share with your team
 - Only `github.com` for now.
   alternative: also gitlab.com and codeberg.org
   because: every onefile app and every user so far is on GitHub. A second host is one more expansion rule when someone asks (G1).
-- When the argument names an existing local path, the local path wins.
-  alternative: a short name always wins
-  because: GOPATH-style checkouts (`~/go/src/github.com/...`) are real local directories, and serving one must keep working
+- A bare `github.com/...` is always a short name. A local checkout at that path is served as `./github.com/...` or with `file://` (user, 2026-11-24).
+  alternative: an existing local path wins, which Phase 3 first shipped
+  because: an untrusted checkout could hold a directory of that name. Its page would be served as a local page, without the pin or `checkRemotePage`, and with the line's `--allow-exec` (found by the security review of tinkerdown#382)
 - A short name changes only how the URL is written. After expansion it is an ordinary page URL: the same fetch, redirect checks, size limit, `#sha256=` pin and `checkRemotePage`.
   alternative: none considered
 - Errors and the pin line show both the short name and the URL it expanded to, and the pin line keeps the short form (`github.com/…/http@<ref>#sha256=…`).
   alternative: show only the expanded URL
   because: the user should be able to share back the line they typed
-- A source is a plain CLI command. Each of a name's two jobs gets its own plain form: labels come from the command, and roles become flags the page declares (user, 2026-11-24, option 1 of 3).
+- A source is a plain CLI command, and its label comes from the command. A role keeps its name: `--source send='…'` and `--action stop='…'` (user, 2026-11-24; roles revised 2026-11-25).
   alternative: only make `NAME=` optional, which leaves roles as `NAME=`
   alternative: only a trailing `--`, which covers one command and no roles
 - Everything after `--` is one source command. Each argument is shell-quoted and joined, so the command runs as typed and needs no outer quotes.
@@ -88,22 +88,20 @@ Apps | Build your own | Remix one | Share with your team
 - A source with no name gets its label from its command (`defaultLabel`, Phase 4's user contribution). A repeated label gets `-2`, `-3`.
   alternative: number the sources `1`, `2`
   because: a tab labelled `api` is recognisable, and a tab labelled `1` isn't
-- A page declares its own flags under `flags:` in its frontmatter, each with a kind and one line of help (§ Contract). `--<name> VALUE` fills the page's source or action of that name.
-  alternative: make every named input and action a flag without declaring it
-  because: a declared flag carries its help and kind, and nothing becomes a flag by accident
-- A page flag can't use a built-in flag's name (§ Contract lists them), and a name must match `sourceName`.
-  alternative: none considered
+- A page declares no flags of its own. `serve` takes the same fixed set for every page: `--source`, `--action`, `--` and the built-ins (user, 2026-11-25).
+  alternative: page-declared `flags:` and `--NAME VALUE`, approved 2026-11-24
+  because: each page would add its own flag names, so the set has no limit, which works against the few-building-blocks argument
 - `serve` refuses an unknown flag, where today it ignores it.
-  because: a mistyped page flag would otherwise run the page without that command and say nothing
-- `tinkerdown serve <page> --help` fetches the page and lists its flags with their help. The help is page text, so it is cleaned as `accepts.hint` is.
+  because: a mistyped flag would otherwise run the page without it and say nothing
+- `tinkerdown serve <page> --help` fetches the page and lists what it takes: the names its merges read, the names its buttons send, and each `accepts` hint, cleaned as page text.
   alternative: none considered
-- Flags are the preferred way to run an app. The README pitch, each app's README and the guide lead with `--`, plain `--source` and page flags. `--config` is the fallback for commands too long for one line (user, 2026-11-24).
+- Flags are the preferred way to run an app. The README pitch, each app's README and the guide lead with `--`, plain `--source`, and `NAME=` for roles. `--config` is the fallback for commands too long for one line (user, 2026-11-24).
   alternative: lead with a `--config` file
   because: a line with its commands shows everything it runs, which is the safety claim, and it needs no second file
 - `--config` is always a local file, never fetched. A teammate gets the config from the team's repo, or writes their own.
   alternative: `--config` from a URL or a short name
   because: a fetched config would be commands from a URL, which is what `checkRemotePage` exists to refuse
-- The guide teaches only the shareable form: the page declares a `merge` source and its `flags:`, and the commands come from the user.
+- The guide teaches only the shareable form: the page declares `merge` sources, and the commands come from the user.
   alternative: also teach pages that declare their own exec sources, which work locally
   because: such a page fails `checkRemotePage`, so it can never be shared by URL or short name
 - `AGENTS.md` stays one file with three parts, "Run an app", "Build an app" and "Remix an app", so one link serves an LLM for any of them (user, 2026-11-24).
@@ -139,30 +137,29 @@ Apps | Build your own | Remix one | Share with your team
 - Phases 1 and 2 ship as one onefile PR, so the README's claims about agents ship with the guide that backs them (user, 2026-11-24).
   alternative: a README PR, then a guide PR
   because: the README tells readers to ask an agent for a page, and the guide is what makes that work
-- Short names, plain commands and page flags ship together in tinkerdown's next batched release, not in releases of their own (user, 2026-11-24). Phase 5 switches the onefile docs and pages over after that release.
+- Short names and plain commands ship together in tinkerdown's next batched release, not in releases of their own (user, 2026-11-24). Phase 5 switches the onefile docs and pages over after that release.
   alternative: release after each tinkerdown phase
   because: the user asked for fewer, larger releases
 
 ## Security
 
-- What runs: nothing new. A short name expands to a URL, and the page behind it goes through `checkRemotePage` as today. A page flag declares only a name, a kind and help text, so a page still can't add a command. Every command is typed by the user, and `--allow-exec` is still required.
+- What runs: nothing new. A short name expands to a URL, and the page behind it goes through `checkRemotePage` as today. Every command is typed by the user, and `--allow-exec` is still required.
 - Values from the browser: none new.
 - Hand-made messages and replayed URLs: none new.
 - Secrets: none new. Flags and a `--config` file hold commands, not tokens. The README says to keep tokens in the environment (`gh` and `docker` already read their own).
-- Untrusted text: a short name is parsed, never passed to a shell, and § Contract's character rules refuse anything that could change the fetched path. A page flag's help is page text, cleaned before `--help` prints it. A page can't claim a built-in flag such as `--allow-exec` or `--host`.
+- Untrusted text: a short name is parsed, never passed to a shell, and § Contract's character rules refuse anything that could change the fetched path. The names and hints `--help` prints are page text, so they are cleaned first.
 - What the README must warn about: a branch name like `@main` can change under you, so a shared line should use `@<commit>` or `#sha256=`. The same `github.com/` look covers a typo-squatted owner, so check the owner before running a teammate's line.
 
 ## Files
 
 onefile (worktree `.worktrees/share-and-build`):
-- `README.md`: the pitch, why, what it isn't, how sharing is safe, "Share with your team" (the line with its commands, plus a pin) and "Remix an app". Short names and page flags arrive in Phase 5.
+- `README.md`: the pitch, why, what it isn't, how sharing is safe, "Share with your team" (the line with its commands, plus a pin) and "Remix an app". Short names and `--` arrive in Phase 5.
 - `AGENTS.md`, in three parts:
   - "Run an app": today's steps, for any app, not only logs.
-  - "Build an app": the recipe, the patterns, the pitfalls, declaring `flags:`, and publishing your page at its short name.
+  - "Build an app": the recipe, the patterns, the pitfalls, and publishing your page at its short name.
   - "Remix an app": copy an app by its short name, keep its patterns, change its commands and markup, and publish it under your own name.
 - `plans/README.md`: the pitfalls section and the page-building rules are replaced by links to AGENTS.md, and step 5 of "How an app gets built" says to build the page by following AGENTS.md. The e2e pitfall (tinkerdown#359) stays, since it's about onefile's tests.
-- each `<app>/index.md`: Phase 5. Declares `flags:` for its roles: `http` (`requests`, `send`), `containers` (its sources and four actions), `ci` (its sources and two actions).
-- each `<app>/README.md`, `ROADMAP.md`: short names, `--` and page flags in Phase 5.
+- each `<app>/README.md`, `ROADMAP.md`: short names and `--` in Phase 5.
 - `e2e/*_test.go`: Phase 5. Each test's URL swap matches the short name, and each runs its README's new command.
 - `plans/2026-11-22-http.md`: the pitfalls link at line 220 points at AGENTS.md.
 
@@ -174,23 +171,23 @@ tinkerdown (Phase 3, worktree `.worktrees/short-names`):
 - `CHANGELOG.md`: an `[Unreleased] ### Added` entry.
 
 tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
-- `cmd/tinkerdown/commands/serve.go`: `--` ends flag parsing; unknown `--<name> VALUE` pairs are kept until the page loads, then filled or refused; `--help` after a page lists its flags.
-- `cmd/tinkerdown/commands/source_flags.go`: `parseSourceFlag` takes a value with no name; `defaultLabel` new; page flags resolve to sources and actions.
-- `cmd/tinkerdown/commands/remote_page.go`: `checkRemotePage` allows `flags:`.
-- `parser.go`, `internal/config/config.go`: a `Flags` map in the page frontmatter, next to `SourceAccepts`.
-- `cmd/tinkerdown/commands/source_flags_test.go`: the plain-command and page-flag cases in § Acceptance criteria.
-- `docs/reference/cli.md`, `docs/sources/stream.md`: `--`, plain `--source` and `flags:`, next to `accepts`.
+- `cmd/tinkerdown/commands/serve.go`: `--` ends flag parsing; an unknown flag is refused; `--help` after a page lists what it takes.
+- `cmd/tinkerdown/commands/source_flags.go`: `parseSourceFlag` takes a value with no name; `defaultLabel` new; `reuseLine` puts new `--source` flags before a `--`.
+- `cmd/tinkerdown/commands/source_flags_test.go`: the plain-command cases in § Acceptance criteria.
+- `docs/reference/cli.md`, `docs/sources/stream.md`: `--` and plain `--source`.
+- `docs/guides/debugging.md`, `deployment.md`, `ai-generation.md`: drop or replace the serve flags that don't exist (A3).
 - `CHANGELOG.md`: an `[Unreleased] ### Added` entry, and a `### Changed` entry for refusing unknown flags.
 
 ## Tracker
 
 | # | Type | Item | Severity | Status |
 |---|---|---|---|---|
-| A1 | assumption | `raw.githubusercontent.com` serves a tag in place of `<ref>` as it does a branch and a short commit. | low | open (Phase 3) |
-| A2 | assumption | `serve` can load the page before it resolves page flags: a page from a URL is fetched, and a local page parsed, before sources are checked. | medium | open (Phase 4) |
-| A3 | assumption | No published app README or test passes a flag that `serve` ignores today, so refusing unknown flags breaks none of them. | medium | open (Phase 4) |
+| A1 | assumption | `raw.githubusercontent.com` serves a tag in place of `<ref>` as it does a branch and a short commit. | low | verified 2026-11-24: `HEAD`, a tag, a short commit and a branch all return 200 |
+| A2 | assumption | `serve` can load the page before it resolves page flags: a page from a URL is fetched, and a local page parsed, before sources are checked. | medium | verified 2026-11-25: flag sources are only read after `Discover()`; moot now that page flags are dropped |
+| A3 | assumption | No published app README or test passes a flag that `serve` ignores today, so refusing unknown flags breaks none of them. | medium | failed 2026-11-25: onefile is clean, but tinkerdown's guides document `--debug`, `--verbose`, `--production`, `--log-format` and `--correlation-ids`, which nothing reads. Phase 4 fixes those guides |
 | R1 | risk | The fresh agent still can't build db after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | open (Phase 6) |
 | R2 | risk | Raw GitHub caches a branch for about five minutes, so a teammate can get an older page right after a push. Mitigation: shared lines use `@<commit>`. | low | accepted |
+| A4 | assumption | A fetched page's commands run where `serve` runs, as its `file:` paths resolve. | high | failed 2026-11-25: they ran in the page's temp directory, so `-- go test -json ./...` found no module. Fixed in tinkerdown#387 for v0.9.1 (user, 2026-11-25), which becomes the apps' minimum |
 | G1 | gap | Hosts other than github.com. | low | unowned |
 
 ## Acceptance criteria
@@ -202,23 +199,23 @@ tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
   - `github.com/o/r/doc.md`
   - `github.com/o/r` (root `index.md`)
   - `#sha256=` after a short name
-  - an existing local `github.com/...` directory still served locally
+  - a local `github.com/...` directory doesn't take over the short name, and `./github.com/...` serves it
   - refusals for `github.com/o` (no repo), `..`, `?`, `%` and an empty ref
   - an error message that names both the short name and the URL
-- [ ] The same package covers plain commands and page flags:
+- [ ] The same package covers plain commands:
   - `-- docker logs -f api` becomes one source running `docker logs -f api`, labelled by `defaultLabel`
   - `-- sh -c 'echo "a b"'` runs with its quoting intact
   - `--source 'docker logs -f api'` with no name, `--source 'api=…'` as today, and `env FOO=1 cmd`
   - two sources with the same label become `api` and `api-2`
-  - `--send 'cmd'` fills the page's `send` source, and `--stop 'cmd'` its `stop` action
-  - refusals: a value of the wrong kind, a page flag named `port`, an undeclared `--foo`
-  - `serve <page> --help` lists the page's flags, and a `<script>` in help prints as text
-  - a page from a URL with `flags:` passes `checkRemotePage`
+  - only the first `--` ends parsing: `-- watchexec -e go -- go test -json ./...` is one command
+  - the "Next time, run" line puts its new `--source` flags before a `--`
+  - refusals: an unknown `--foo` and an unknown `-x`
+  - `serve <page> --help` lists the names the page takes, and a `<script>` in a hint prints as text
 - [ ] tinkerdown's full suite (`go test -timeout 40m ./...`) and pre-commit pass.
 - [ ] `cd e2e && go test ./...` in onefile passes with each app's new README command, after Phase 5. The tests swap the short name for a local `httptest` URL as they swap the raw URL today, so they stay offline. The expansion itself is covered by tinkerdown's unit tests, and the real fetch by the manual run.
 - [ ] One manual run of each changed README command from GitHub by its short name, recorded in Results.
 - [ ] A fresh subagent, given only `AGENTS.md` and db's approved plan, builds a db page that passes `cd e2e && go test -run TestDB ./...`. Where it got stuck, and how many tries it took, are in Results.
-- [ ] `grep -rn 'raw.githubusercontent' README.md AGENTS.md */README.md` finds only the "what a short name expands to" line after Phase 5.
+- [ ] `grep -rn 'raw.githubusercontent' README.md AGENTS.md */README.md` finds only the "what a short name expands to" line and the remix step's `curl` copy after Phase 5.
 - [ ] Each safety guarantee in the README links to the tinkerdown code or test that enforces it (`checkRemotePage` and its tests, the `--host` default, the `#sha256=` check), and each link opens.
 - [ ] `prereview check` passes on every changed doc.
 
@@ -238,17 +235,6 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 
 `#` is split off first, then the last `@`. Anything else, such as `?`, `%`, a space or an empty part, is refused with a message that names the rule.
 
-Page flags, as the http page would declare them:
-
-```yaml
-flags:
-  requests: {kind: http, help: "your .http file"}
-  send:     {kind: cmd,  help: "the curl command that sends one request"}
-```
-
-- Kinds: `cmd` (a command; needs `--allow-exec`), `file` (a path to follow), `http` (a `.http` file), `action` (a command a button runs; needs `--allow-exec`).
-- Reserved names: `help`, `h`, `source`, `action`, `watch`, `w`, `port`, `p`, `host`, `config`, `c`, `operator`, `o`, `allow-exec`, `headless`.
-
 ## Phases
 
 ### Phase 1: pitch, scope and sharing (onefile)
@@ -263,28 +249,29 @@ flags:
 - Audit: read the five apps' pages and plans, and list each pattern and pitfall that a new page needs.
 - Implementation: `AGENTS.md` and `plans/README.md` per the Files list.
 - Acceptance: `prereview check`, and plans/README has no page-building advice left that isn't in AGENTS.md.
-- Learn: five of plans/README's seven rules were page-building rules, so they moved with the pitfalls. The guide is written for tinkerdown 0.8.1, so it teaches raw URLs and `NAME=` flags. `flags:` and short names reach it in Phase 5.
+- Learn: five of plans/README's seven rules were page-building rules, so they moved with the pitfalls. The guide is written for tinkerdown 0.8.1, so it teaches raw URLs and `NAME=` flags. Short names and `--` reach it in Phase 5.
 
 ### Phase 3: short names (tinkerdown)
 
 - Audit: A1. Trace `parsePageArg` → `fetchRemotePage` → the pin line, and confirm a short name reaches every place that prints `shown`.
 - Implementation: per the tinkerdown Phase 3 Files list. Merge to main; it ships with tinkerdown's next release.
 - Acceptance: the short-name criteria.
-- Learn:
+- Learn: the expanded URL goes back through the URL parser, so the fetch and page checks needed no change. Three root e2e tests in tinkerdown run `./tinkerdown`, so a fresh worktree needs `go build -o tinkerdown ./cmd/tinkerdown` before the full suite.
 
-### Phase 4: plain commands and page flags (tinkerdown)
+### Phase 4: plain commands (tinkerdown)
 
-- Audit: A2, A3. Trace `ServeCommand`'s flag loop → `parsePageArg` → `addFlagSource` and `checkFlagSources`, and find where a page's frontmatter is first available.
+- Audit: A2, A3. Trace `ServeCommand`'s flag loop → `parsePageArg` → `addFlagSource` and `checkFlagSources`, and find where a page's frontmatter is first available. The audit found the page-flag contract's http example (`requests`) named the page's own merge. Asked which rule to use, the user dropped page flags: they add names without limit and confuse (2026-11-25).
 - Implementation: per the tinkerdown Phase 4 Files list. **User contribution:** `defaultLabel(cmd string) string` in `source_flags.go`, 5–10 lines. It picks the tab label for `docker logs -f api`, `tail -f /var/log/app.log` and `watchexec -e go -- go test -json ./...`. Decide which word wins, and what happens when none fits `sourceName`.
-- Acceptance: the plain-command and page-flag criteria. Merge to main; it ships in the same release as Phase 3.
-- Learn:
+- Acceptance: the plain-command criteria. Merge to main; it ships in the same release as Phase 3.
+- Learn: `defaultLabel` takes the last plain word, with a path as its base name, and falls back to the first word cleaned, or `cmd` (user, 2026-11-25). `Page.Refs()` already listed a page's actions, so help reuses it instead of scanning buttons. A value starting with `=` is refused, since it most likely lost its name.
 
 ### Phase 5: switch the apps and docs over (onefile)
 
 - Starts after the tinkerdown release that carries Phases 3 and 4.
-- Implementation: each app's page declares `flags:`. Every README command and `AGENTS.md` use short names, `--` and page flags, and the README names the new minimum tinkerdown. Each e2e test runs its README's new command.
+- Audit: list each README and page command, and which of its sources a `["*"]` merge takes; only those can drop `NAME=`. A4 failed, so tinkerdown#387 comes first. The README's tests row ran `go test` with no `cd`, which has never worked from a URL.
+- Implementation: every README command and `AGENTS.md` use short names, and `--` or a plain `--source` where a page takes one command, and the README names the new minimum tinkerdown. Each e2e test runs its README's new command.
 - Acceptance: the onefile e2e and grep criteria, and every check in [plans/README.md](README.md#checks-every-app-passes) for each changed app.
-- Learn:
+- Learn: a role (`send`, `jobs`, `log`, `logs`) keeps `NAME=`, and so does a command whose label would be poor: ci's and containers' loops end in `done` or a format string, and `journalctl … -o short-iso` is `short-iso`. logs, tests and http drop it. The logs and tests e2e tests now run their README's command as written, with a fake `docker` or `watchexec` on `PATH`.
 
 ### Phase 6: build db from the guide (onefile)
 
@@ -295,4 +282,13 @@ flags:
 
 ## Results
 
-<!-- Filled in after Phase 6: the db build by a fresh agent, and what each assumption turned out to be. -->
+Phase 5's manual run, 2026-11-25. Each changed README command ran with tinkerdown v0.9.1, from GitHub by its short name, checked in Chrome. The pages were main's at the time, from before this PR; they differ only in their comments and http's hint.
+- logs: as written, with a busybox container named `api` and a temp `app.log`. Tabs `All|api|app`, three rows.
+- tests: from the sample module, with a fake `watchexec` (not installed here) that runs `go test` once. Nine rows, the failure's output under its row.
+- http: with a one-request `.http` file pointing at a local server. The row and its Send button showed.
+- containers: as written, against this machine's Docker. Five containers, `api` among them.
+- ci: `OWNER/REPO` set to `livetemplate/tinkerdown`, since onefile has no Actions runs. 30 runs, the v0.9.1 release first. An earlier try, with the API quota spent, showed `gh`'s rate-limit message as the page's error row, as the README says.
+
+No console errors in any of them.
+
+<!-- Phase 6 adds the db build by a fresh agent. -->

@@ -1,7 +1,7 @@
 ---
 title: Tests
 # Pass your test command when you serve this page; it must write go test -json:
-#   tinkerdown serve --allow-exec . --source 'go=watchexec -e go -- go test -json ./...'
+#   tinkerdown serve --allow-exec . -- watchexec -e go -- go test -json ./...
 sources:
   tests:
     type: merge

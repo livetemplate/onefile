@@ -6,40 +6,40 @@ A live log viewer built with [tinkerdown](https://github.com/livetemplate/tinker
 
 ## Run it
 
-The page has no log sources of its own: you pass them when you serve it. Run it straight from GitHub, with one `--source` per log:
+The page has no log sources of its own: you pass them when you serve it. Run it straight from GitHub, with a `--source` for each log and the last command after `--`:
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md \
-  --source 'api=docker logs -f --timestamps --tail 200 api' \
-  --source 'app=file:/var/log/app.log'
+tinkerdown serve --allow-exec github.com/livetemplate/onefile/logs \
+  --source file:/var/log/app.log \
+  -- docker logs -f --timestamps --tail 200 api
 ```
 
-Then open http://localhost:8080. Each source gets a tab, and **All** shows every source in one timeline. `serve` prints the page's SHA-256: add `#sha256=…` to the URL to make sure you run the page you reviewed.
+Then open http://localhost:8080. Each source gets a tab, here `api` and `app`, and **All** shows every source in one timeline. `serve` prints the page's SHA-256: add `#sha256=…` after the page's name to make sure you run the page you reviewed.
 
 To run a local copy instead, use the file:
 
 ```sh
-tinkerdown serve --allow-exec index.md --source 'api=docker logs -f api'
+tinkerdown serve --allow-exec index.md -- docker logs -f api
 ```
 
 Run it with no `--source` in a terminal and `serve` asks for sources, then prints the command to reuse. `--allow-exec` lets sources run commands; leave it out when every source is a `file:`.
 
 Setting this up with a coding agent? Point it at [AGENTS.md](../AGENTS.md).
 
-It needs tinkerdown 0.7.4 or later: `brew install livetemplate/tap/tinkerdown`.
+It needs tinkerdown 0.9.1 or later: `brew install livetemplate/tap/tinkerdown`.
 
 ## Add your own logs
 
-Each `--source NAME=VALUE` adds one log. A value starting with `file:` follows that file; anything else is a command, run through the shell:
+Each `--source` adds one log, and so does the command after `--`. A value starting with `file:` follows that file; anything else is a command, run through the shell:
 
 | To follow | Pass |
 |-----------|------|
-| A docker container | `--source 'api=docker logs -f --timestamps --tail 200 api'` |
+| A docker container | `--source 'docker logs -f --timestamps --tail 200 api'` |
 | The systemd journal | `--source 'journal=journalctl -f -n 200 -o short-iso'` |
-| A kubernetes deployment | `--source 'pods=kubectl logs -f --timestamps --tail 200 deploy/api'` |
-| A log file | `--source 'syslog=file:/var/log/syslog'` |
+| A kubernetes deployment | `--source 'kubectl logs -f --timestamps --tail 200 deploy/api'` |
+| A log file | `--source file:/var/log/syslog` |
 
-Names may use letters, digits, `_` and `-`. `tinkerdown serve --help` lists the options. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
+A log's tab is named after its command's last word that isn't a flag, such as `api`, or its file's name, such as `syslog`. To pick the name, start the value with `NAME=`, as the journal row does, since its last word is `short-iso`. Names may use letters, digits, `_` and `-`. `tinkerdown serve --help` lists the options. All stream options are in [tinkerdown's stream source docs](https://github.com/livetemplate/tinkerdown/blob/main/docs/sources/stream.md).
 
 ### Follow a local web app
 

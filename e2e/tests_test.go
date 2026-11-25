@@ -1,13 +1,16 @@
 package e2e
 
-// End-to-end test of the test runner (../tests): serves the page from a URL,
-// as users run it, with `go test -json` on a small sample module passed as a
-// --source flag, and drives it in Docker Chrome.
+// End-to-end test of the test runner (../tests): runs its README's command
+// as written from a small sample module, as users run it from their own, with
+// the page from a local URL and a fake watchexec that runs go test once, and
+// drives it in Docker Chrome.
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -26,10 +29,20 @@ func TestTests(t *testing.T) {
 	pages := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write(page) }))
 	defer pages.Close()
 	sample, _ := filepath.Abs("testdata/tests/sample")
-	url, serverLog := serve(t, bin, pages.URL+"/index.md",
-		// The sleep opens the page before any result exists, as a user who
-		// opens it while tests compile would.
-		"--source", "go=sleep 3 && cd "+sample+" && GOWORK=off GOFLAGS=-count=1 go test -json ./...")
+	port := freePort(t)
+	cmdline := readmeCommandOf(t, "../tests/README.md")
+	cmdline = replaceOnce(t, cmdline, "tinkerdown serve", bin+" serve --port "+fmt.Sprint(port))
+	cmdline = replaceOnce(t, cmdline, "github.com/livetemplate/onefile/tests", pages.URL+"/index.md")
+	// A fake watchexec runs the command after its "--" once. Its sleep opens
+	// the page before any result exists, as a user who opens it while tests
+	// compile would. go test runs in the directory serve runs in, the sample
+	// module, as the README says.
+	tools := t.TempDir()
+	fakeTool(t, tools, "watchexec", `while [ "$1" != -- ]; do shift; done; shift; sleep 3; exec "$@"`)
+	cmd := exec.Command("sh", "-c", "exec "+cmdline)
+	cmd.Dir = sample
+	cmd.Env = append(os.Environ(), "PATH="+tools+":"+os.Getenv("PATH"), "GOWORK=off", "GOFLAGS=-count=1")
+	url, serverLog := serveCmd(t, cmd, port)
 
 	ctx := dockerChrome(t)
 	logs := &browserLogs{}

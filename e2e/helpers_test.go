@@ -217,3 +217,12 @@ func replaceOnce(t *testing.T, s, old, new string) string {
 	}
 	return strings.Replace(s, old, new, 1)
 }
+
+// fakeTool writes an executable shell script named name into dir, so a
+// README command can run unchanged with dir first on its PATH.
+func fakeTool(t *testing.T, dir, name, script string) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(dir, name), []byte("#!/bin/sh\n"+script+"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+}

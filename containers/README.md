@@ -9,7 +9,7 @@ Lists your Docker containers live, with buttons to start, stop, restart and kill
 The page runs no command of its own. You pass the Docker commands it uses as flags:
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/containers/index.md \
+tinkerdown serve --allow-exec github.com/livetemplate/onefile/containers \
   --source 'docker=docker ps -a --format "{\"name\":{{json .Names}},\"image\":{{json .Image}},\"state\":{{json .State}},\"status\":{{json .Status}}}"; exec docker events --filter type=container --filter event=create --filter event=start --filter event=die --filter event=pause --filter event=unpause --filter event=destroy --format "{\"name\":{{json .Actor.Attributes.name}},\"image\":{{json .Actor.Attributes.image}},\"state\":\"{{if eq .Action \"start\" \"unpause\"}}running{{else if eq .Action \"die\"}}exited{{else if eq .Action \"pause\"}}paused{{else if eq .Action \"destroy\"}}removed{{else}}created{{end}}\",\"status\":\"{{if eq .Action \"start\" \"unpause\"}}running{{else if eq .Action \"die\"}}exited ({{index .Actor.Attributes \"exitCode\"}}){{else if eq .Action \"pause\"}}paused{{else if eq .Action \"destroy\"}}removed{{else}}created{{end}}\"}"' \
   --source 'logs=docker events --filter container="$TD_name" --filter event=start --filter event=destroy --format "{{.Action}}" | { run=$(docker inspect -f "{{.State.StartedAt}}" -- "$TD_name"); docker logs -f --timestamps --tail 200 -- "$TD_name"; while read -r event && [ "$event" = start ]; do now=$(docker inspect -f "{{.State.StartedAt}}" -- "$TD_name"); [ "$now" = "$run" ] || { run=$now; docker logs -f --timestamps --since "$now" -- "$TD_name"; }; done; }' \
   --action 'start=docker start -- "$TD_name"' \
@@ -18,7 +18,7 @@ tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/one
   --action 'kill=docker kill -- "$TD_name"'
 ```
 
-Then open http://localhost:8080. It needs tinkerdown 0.7.1 or later.
+Then open http://localhost:8080. It needs tinkerdown 0.9.1 or later.
 
 Each flag does one job:
 
