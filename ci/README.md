@@ -9,7 +9,7 @@ Shows your GitHub Actions runs as a live list, newest first. Click a run's numbe
 You need the [GitHub CLI](https://cli.github.com), signed in (`gh auth login`). The page runs no command of its own: you pass the `gh` commands it uses as flags. Replace `OWNER/REPO` with your repo:
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/ci/index.md \
+tinkerdown serve --allow-exec github.com/livetemplate/onefile/ci \
   --source 'myapp=while :; do if out=$(gh run list --repo OWNER/REPO --limit 30 --json databaseId,number,status,conclusion,workflowName,displayTitle,headBranch,event,createdAt,updatedAt,url,attempt --jq ".[] | .id = (.databaseId | tostring) | .ref = \"\(.databaseId)-\(.attempt)\" | .repo = (.url | split(\"/\")[3:5] | join(\"/\"))" 2>&1); then printf "%s\n" "$out" "{\"cleared\":true}"; else printf "%s\n" "$out" | paste -sd " " - >&2; fi; sleep 15; done' \
   --source 'jobs=while :; do out=$(gh run view "$TD_run" --repo "$TD_repo" --attempt "$TD_attempt" --json status,jobs --jq "(.jobs[] | {name, status, conclusion, failed: ([.steps[] | select(.conclusion == \"failure\") | .name] | join(\", \"))}), (select(.status == \"completed\") | {done: true})" 2>&1) || { printf "%s\n" "$out" | paste -sd " " - >&2; sleep 10; continue; }; printf "%s\n" "$out"; case "$out" in *\"done\":true*) exec tail -f /dev/null;; esac; sleep 10; done' \
   --source 'log=until s=$(gh run view "$TD_run" --repo "$TD_repo" --attempt "$TD_attempt" --json status,conclusion --jq ".status + \" \" + .conclusion") && [ "${s%% *}" = completed ]; do sleep 30; done; [ "${s#* }" = success ] || { out=$(gh run view "$TD_run" --repo "$TD_repo" --attempt "$TD_attempt" --log-failed | cut -f1,3- | awk "{ gsub(/\033\[[0-9;]*m/, \"\"); print }"); [ -z "$out" ] || { printf "%s\n" "$out" | grep -B 30 "##\[error\]" | grep -v "^--$" || printf "%s\n" "$out" | tail -n 200; }; }; exec tail -f /dev/null' \
@@ -17,7 +17,7 @@ tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/one
   --action 'cancel=case "$TD_run" in ""|*[!0-9]*) echo "not a run ID" >&2; exit 1;; esac; case "$TD_repo" in */*/*|.*|*/.*|*[!A-Za-z0-9_./-]*) echo "not a repo" >&2; exit 1;; ?*/?*) ;; *) echo "not a repo" >&2; exit 1;; esac; gh run cancel "$TD_run" --repo "$TD_repo"'
 ```
 
-Then open http://localhost:8080. It needs tinkerdown 0.7.3 or later.
+Then open http://localhost:8080. It needs tinkerdown 0.9.1 or later.
 
 Each flag does one job:
 

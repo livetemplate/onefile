@@ -111,7 +111,7 @@ func TestHTTP(t *testing.T) {
 		t.Helper()
 		port := freePort(t)
 		cmdline = replaceOnce(t, cmdline, "tinkerdown serve", bin+" serve --port "+fmt.Sprint(port))
-		cmdline = replaceOnce(t, cmdline, "https://raw.githubusercontent.com/livetemplate/onefile/main/http/index.md", pages.URL+"/index.md")
+		cmdline = replaceOnce(t, cmdline, "github.com/livetemplate/onefile/http", pages.URL+"/index.md")
 		cmd := exec.Command("sh", "-c", "exec "+cmdline)
 		cmd.Dir = dir
 		cmd.Env = append(os.Environ(), "OFE2E_TOKEN="+token)

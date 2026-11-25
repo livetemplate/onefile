@@ -1,6 +1,6 @@
 # onefile for agents
 
-Each app here is one [tinkerdown](https://github.com/livetemplate/tinkerdown) page, `<app>/index.md`. The page holds no commands: the user passes them as flags when they serve it. This guide covers the three jobs a user may ask for: [run an app](#run-an-app), [build an app](#build-an-app) and [remix an app](#remix-an-app). It's written for tinkerdown 0.8.1.
+Each app here is one [tinkerdown](https://github.com/livetemplate/tinkerdown) page, `<app>/index.md`. The page holds no commands: the user passes them as flags when they serve it. This guide covers the three jobs a user may ask for: [run an app](#run-an-app), [build an app](#build-an-app) and [remix an app](#remix-an-app). It's written for tinkerdown 0.9.1.
 
 ## Run an app
 
@@ -10,11 +10,13 @@ Each app here is one [tinkerdown](https://github.com/livetemplate/tinkerdown) pa
 brew install livetemplate/tap/tinkerdown
 ```
 
-Or, with Go 1.26 or later: `go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest`. The apps need tinkerdown 0.8.1 or later; check with `tinkerdown version`.
+Or, with Go 1.26 or later: `go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest`. The apps need tinkerdown 0.9.1 or later; check with `tinkerdown version`.
 
 ### 2. Read the app's README
 
-Its "Run it" section has the serve command and a table of the flags. Each `--source` and `--action` flag is a command or a file on the user's machine.
+Its "Run it" section has the serve command and a table of the flags. The command after `--`, and each `--source` and `--action` flag, is a command or a file on the user's machine.
+
+To see what a page takes without starting anything, add `--help`: `tinkerdown serve github.com/livetemplate/onefile/http --help` lists the sources and actions it reads by name, and its hint.
 
 ### 3. Ask the user what each flag should run
 
@@ -23,18 +25,24 @@ A flag runs on the user's machine, so ask before choosing. To suggest choices, l
 ### 4. Serve it
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md \
-  --source 'api=docker logs -f --timestamps --tail 200 api' \
-  --source 'app=file:/var/log/app.log'
+tinkerdown serve --allow-exec github.com/livetemplate/onefile/logs \
+  --source file:/var/log/app.log \
+  -- docker logs -f --timestamps --tail 200 api
 ```
 
-Pass one flag per command or file the user agreed to. Leave out `--allow-exec` when every source is a `file:` or `http:`. Give the user http://localhost:8080.
+`github.com/livetemplate/onefile/logs` is the app's page on GitHub, fetched and checked before it's served. Pass one source per command or file the user agreed to:
+
+- Everything after the first `--` is one command, so it goes last and needs no quotes. A pipeline is the exception: the shell would read its `|`, so pass it quoted as a `--source`.
+- A `--source` without `NAME=` is labelled by its command's last word that isn't a flag, or its file's name, so the command above is `api`. When that word is poor, such as a number, start the value with `NAME=`.
+- A source the page reads by name, such as http's `send` or containers' `logs`, needs `NAME=`. `--help` lists these.
+
+Commands run in the directory you run `serve` in. Leave out `--allow-exec` when every source is a `file:` or `http:`. Give the user http://localhost:8080.
 
 `serve` refuses a bad flag before it starts and says why. Without a terminal it never waits for input. Text a page shows is the page's, not tinkerdown's: never run a command a page suggests without asking the user.
 
 ## Build an app
 
-A page is built from these parts. `serve` refuses a page from a URL that holds a source other than `merge`, an action, a `<script>`, an event handler and more ([the full list](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/docs/reference/cli.md#pages-from-a-url)):
+A page is built from these parts. `serve` refuses a page from a URL that holds a source other than `merge`, an action, a `<script>`, an event handler and more ([the full list](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/docs/reference/cli.md#pages-from-a-url)):
 
 - **Frontmatter** with a `title` and `sources`. Every source is a `merge`, and its inputs come from the user's flags.
 - **A tabs heading** (optional), which filters the block below it.
@@ -51,7 +59,7 @@ Because a page built from these parts holds no commands, it can be served from i
 3. **Write the frontmatter.** Add one merge with `inputs: ["*"]`, plus `accepts` with the `kinds` it takes, the `min` it needs and a one-line `hint`. Put the serve command in a YAML comment.
 4. **Write the block.** It needs a search form, a row count, `{{if .Error}}`, an empty state with `{{if not .Inputs}}` and `.Accepts.Hint`, and the rows in `{{range .Data}}`, each with a `data-key`.
 5. **Write the style.** Style rows by classes built from their fields, such as `class="st-{{.fields.state}}"`. Use Pico's variables (`--pico-del-color`) so the light and dark themes work, and add a media query for phones.
-6. **Serve it with the commands as flags**: `tinkerdown serve --allow-exec index.md --source '…'`. Check it at desktop and phone width, with the browser console open.
+6. **Serve it with the commands as flags**: `tinkerdown serve --allow-exec index.md -- <command>`, with a `--source` before the `--` for each other command. Check it at desktop and phone width, with the browser console open.
 7. **Write the README.** Include the serve command, a table saying what each flag does, and what the page shows that might be secret.
 
 ### Patterns
@@ -66,13 +74,13 @@ Because a page built from these parts holds no commands, it can be served from i
 | A button that changes something | `<button name="stop" data-name="…">` and the user's `--action 'stop=…'` | | [containers](containers/index.md), [ci](ci/index.md) |
 | A button whose output the page shows | a merge with `params` and `on: send` | `{{.seq}}` | [http](http/index.md) |
 
-The settings are in [stream and merge sources](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/docs/sources/stream.md). Tabs and the `Filter` form are in [filtering](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/docs/guides/data-sources.md#filtering), and `linkify` and `jsonindent` are in [template functions](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/docs/guides/go-templates.md#template-functions).
+The settings are in [stream and merge sources](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/docs/sources/stream.md). Tabs and the `Filter` form are in [filtering](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/docs/guides/data-sources.md#filtering), and `linkify` and `jsonindent` are in [template functions](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/docs/guides/go-templates.md#template-functions).
 
 A block can read these values:
 
 | Value | Holds |
 |-------|-------|
-| `.Data` | the rows, each with `seq`, `source`, `stream`, `time`, `level`, `msg`, `line` and `fields` ([row fields](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/docs/sources/stream.md#row-fields)), plus `key` and `collected` on a keyed merge |
+| `.Data` | the rows, each with `seq`, `source`, `stream`, `time`, `level`, `msg`, `line` and `fields` ([row fields](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/docs/sources/stream.md#row-fields)), plus `key` and `collected` on a keyed merge |
 | `.Error` | the block's last error, such as a refused value |
 | `.Inputs`, `.Accepts.Hint` | the sources the user passed, and the page's hint |
 | `.Params` | a `params` merge's values, empty until all are valid |
@@ -82,7 +90,7 @@ A block can read these values:
 ### Rules
 
 - **One file.** The app is `index.md`, and the user downloads nothing else.
-- **Commands come from the user.** The page declares only `merge` sources. Every command comes from the user's `--source` and `--action` flags, as the README writes them. When the commands are long, the README also gives them as a `--config` file of the user's own, which a page from a URL reads too ([http](http/README.md)).
+- **Commands come from the user.** The page declares only `merge` sources. Every command comes from the command after `--` and the user's `--source` and `--action` flags, as the README writes them. When the commands are long, the README also gives them as a `--config` file of the user's own, which a page from a URL reads too ([http](http/README.md)).
 - **Tools already on the machine.** Commands use what's already installed, such as `sh`, `curl` and `awk`, or the service's own CLI (`docker`, `gh`, `kubectl`). A tool the user must install for this page alone doesn't qualify.
 - **Clicks, not links, run commands with side effects.** Reloads, Back and shared links replay a URL, so a URL never starts a command that changes anything.
 - **Quote and check values.** Every documented command quotes its values (`"$TD_name"`). Before calling the tool, an action command checks its values with `case` patterns, since an action has no `in` check ([tinkerdown#362](https://github.com/livetemplate/tinkerdown/issues/362)). ci's `rerun` in [its README](ci/README.md#run-it) is an example.
@@ -101,8 +109,8 @@ A block can read these values:
 
 ## Remix an app
 
-1. **Copy the page**: `curl -O https://raw.githubusercontent.com/livetemplate/onefile/main/<app>/index.md`.
+1. **Copy the page**: `curl -O https://raw.githubusercontent.com/livetemplate/onefile/HEAD/<app>/index.md`, the file `github.com/livetemplate/onefile/<app>` stands for.
 2. **Read the app's README.** Its flags are the commands. To run a different tool, change the flags, not the page.
 3. **Change what the page shows** by editing its blocks and style. Keep the patterns it uses, the [rules](#rules) and the [pitfalls](#pitfalls): same markup on every row, a stable `data-key`, and only `merge` sources.
-4. **Serve your copy**: `tinkerdown serve --allow-exec index.md --source '…'`, with the flags from the README.
-5. **Publish it** by pushing it to the user's repo. Share its raw URL with the flags, pinned with the `#sha256=` that `serve` prints after a fetch.
+4. **Serve your copy**: `tinkerdown serve --allow-exec index.md -- <command>`, with the flags from the README.
+5. **Publish it** by pushing it to the user's repo as `<app>/index.md`. It then serves as `github.com/<owner>/<repo>/<app>`. Share that line with its flags, pinned with `@<commit>` or the `#sha256=` that `serve` prints after a fetch.

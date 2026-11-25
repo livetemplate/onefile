@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13), Phases 1 and 2 (#14), Phase 3 (tinkerdown#382, unreleased). In review: Phase 4 (tinkerdown#384). Next: the release, then Phase 5.
+State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0). In review: tinkerdown#387 (a fetched page's command directory, for v0.9.1) and Phase 5. Next: v0.9.1, then Phase 6.
 
 ## Context
 
@@ -187,6 +187,7 @@ tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
 | A3 | assumption | No published app README or test passes a flag that `serve` ignores today, so refusing unknown flags breaks none of them. | medium | failed 2026-11-25: onefile is clean, but tinkerdown's guides document `--debug`, `--verbose`, `--production`, `--log-format` and `--correlation-ids`, which nothing reads. Phase 4 fixes those guides |
 | R1 | risk | The fresh agent still can't build db after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | open (Phase 6) |
 | R2 | risk | Raw GitHub caches a branch for about five minutes, so a teammate can get an older page right after a push. Mitigation: shared lines use `@<commit>`. | low | accepted |
+| A4 | assumption | A fetched page's commands run where `serve` runs, as its `file:` paths resolve. | high | failed 2026-11-25: they ran in the page's temp directory, so `-- go test -json ./...` found no module. Fixed in tinkerdown#387 for v0.9.1 (user, 2026-11-25), which becomes the apps' minimum |
 | G1 | gap | Hosts other than github.com. | low | unowned |
 
 ## Acceptance criteria
@@ -214,7 +215,7 @@ tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
 - [ ] `cd e2e && go test ./...` in onefile passes with each app's new README command, after Phase 5. The tests swap the short name for a local `httptest` URL as they swap the raw URL today, so they stay offline. The expansion itself is covered by tinkerdown's unit tests, and the real fetch by the manual run.
 - [ ] One manual run of each changed README command from GitHub by its short name, recorded in Results.
 - [ ] A fresh subagent, given only `AGENTS.md` and db's approved plan, builds a db page that passes `cd e2e && go test -run TestDB ./...`. Where it got stuck, and how many tries it took, are in Results.
-- [ ] `grep -rn 'raw.githubusercontent' README.md AGENTS.md */README.md` finds only the "what a short name expands to" line after Phase 5.
+- [ ] `grep -rn 'raw.githubusercontent' README.md AGENTS.md */README.md` finds only the "what a short name expands to" line and the remix step's `curl` copy after Phase 5.
 - [ ] Each safety guarantee in the README links to the tinkerdown code or test that enforces it (`checkRemotePage` and its tests, the `--host` default, the `#sha256=` check), and each link opens.
 - [ ] `prereview check` passes on every changed doc.
 
@@ -267,9 +268,10 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 ### Phase 5: switch the apps and docs over (onefile)
 
 - Starts after the tinkerdown release that carries Phases 3 and 4.
+- Audit: list each README and page command, and which of its sources a `["*"]` merge takes; only those can drop `NAME=`. A4 failed, so tinkerdown#387 comes first. The README's tests row ran `go test` with no `cd`, which has never worked from a URL.
 - Implementation: every README command and `AGENTS.md` use short names, and `--` or a plain `--source` where a page takes one command, and the README names the new minimum tinkerdown. Each e2e test runs its README's new command.
 - Acceptance: the onefile e2e and grep criteria, and every check in [plans/README.md](README.md#checks-every-app-passes) for each changed app.
-- Learn:
+- Learn: a role (`send`, `jobs`, `log`, `logs`) keeps `NAME=`, and so does a command whose label would be poor: ci's and containers' loops end in `done` or a format string, and `journalctl … -o short-iso` is `short-iso`. logs, tests and http drop it. The logs and tests e2e tests now run their README's command as written, with a fake `docker` or `watchexec` on `PATH`.
 
 ### Phase 6: build db from the guide (onefile)
 

@@ -9,17 +9,17 @@ Lists the requests in your `.http` file, each with a Send button, and shows the 
 The page holds no requests and runs no command of its own. You pass your `.http` file and the curl command that sends a request:
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/http/index.md \
-  --source 'api=http:./api.http' \
+tinkerdown serve --allow-exec github.com/livetemplate/onefile/http \
+  --source http:./api.http \
   --source 'send=printf "%s" "$TD_headers" | curl -sS -i --max-time 30 -X "$TD_method" -H @- ${TD_body:+--data-binary "$TD_body"} -w "\n%{json}\n" -- "$TD_url"'
 ```
 
-Then open http://localhost:8080. It needs tinkerdown 0.8.1 or later, and curl 7.75 or later.
+Then open http://localhost:8080. It needs tinkerdown 0.9.1 or later, and curl 7.75 or later.
 
 | Flag | What it does |
 |------|--------------|
-| `--source api=http:./api.http` | Reads your `.http` file, one row per request, and reads it again when it changes. A relative path is taken from the directory you run `serve` in. |
-| `--source send=…` | Sends the request you clicked with curl. It gets the request's method, URL, headers and body, with variables filled in, as `$TD_method`, `$TD_url`, `$TD_headers` and `$TD_body`. Headers go to curl on stdin, and a request without a body sends none. |
+| `--source http:./api.http` | Reads your `.http` file, one row per request, and reads it again when it changes. A relative path is taken from the directory you run `serve` in. Pass one per file. |
+| `--source send=…` | Sends the request you clicked with curl. The page's Send button runs the source named `send`, so this one keeps its name. It gets the request's method, URL, headers and body, with variables filled in, as `$TD_method`, `$TD_url`, `$TD_headers` and `$TD_body`. Headers go to curl on stdin, and a request without a body sends none. |
 
 The same two sources can go in a config file of your own, so the curl command needs no shell quoting:
 
@@ -31,10 +31,10 @@ sources:
 ```
 
 ```sh
-tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/http/index.md --config http.yaml
+tinkerdown serve --allow-exec github.com/livetemplate/onefile/http --config http.yaml
 ```
 
-A relative path in `http.yaml` is taken from that file's directory.
+A relative path in `http.yaml` is taken from that file's directory, and the curl command runs there.
 
 ## Write the .http file
 

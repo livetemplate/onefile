@@ -1,7 +1,7 @@
 ---
 title: Logs
 # This page has no log sources of its own: pass them when you serve it.
-#   tinkerdown serve --allow-exec . --source 'api=docker logs -f --timestamps api' --source 'app=file:/var/log/app.log'
+#   tinkerdown serve --allow-exec . --source file:/var/log/app.log -- docker logs -f --timestamps api
 # tinkerdown serve --help shows more examples.
 sources:
   all:

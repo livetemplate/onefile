@@ -6,8 +6,8 @@ Run one straight from GitHub with [tinkerdown](https://github.com/livetemplate/t
 
 ```sh
 tinkerdown serve --allow-exec \
-  https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md \
-  --source 'api=docker logs -f api'
+  github.com/livetemplate/onefile/logs \
+  -- docker logs -f api
 ```
 
 Open http://localhost:8080 to see the logs of your `api` container, live.
@@ -22,12 +22,12 @@ Read https://github.com/livetemplate/onefile/blob/main/AGENTS.md and build me a 
 
 A page only shows. Every command it runs is in the line you typed, so you can read a teammate's line before you run it.
 
-- **A page from a URL can't run anything by itself.** It can't hold commands, actions, schedules, includes, file reads or unsafe HTML. `serve` refuses such a page before it starts ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page.go#L164), [its tests](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page_test.go#L101)).
-- **Every command comes from you.** Commands come only from your `--source` and `--action` flags, or from a `--config` file of your own, and they run only with `--allow-exec`.
-- **It stays on your machine.** `serve` listens on localhost unless you pass `--host` ([the default](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/internal/config/config.go#L1008)).
-- **You can pin the exact page.** After a fetch, `serve` prints the page's sha256. With `#sha256=<hex>` on the URL, it refuses any other content ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page.go#L145), [its test](https://github.com/livetemplate/tinkerdown/blob/v0.8.1/cmd/tinkerdown/commands/remote_page_test.go#L53)).
+- **A page from a URL can't run anything by itself.** It can't hold commands, actions, schedules, includes, file reads or unsafe HTML. `serve` refuses such a page before it starts ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page.go#L242), [its tests](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page_test.go#L183)).
+- **Every command comes from you.** Commands come only from what you pass: the command after `--`, your `--source` and `--action` flags, or a `--config` file of your own. They run only with `--allow-exec`.
+- **It stays on your machine.** `serve` listens on localhost unless you pass `--host` ([the default](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/internal/config/config.go#L1024)).
+- **You can pin the exact page.** After a fetch, `serve` prints the page's sha256. With `#sha256=<hex>` after the page's name, it refuses any other content ([the check](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page.go#L223), [its test](https://github.com/livetemplate/tinkerdown/blob/v0.9.1/cmd/tinkerdown/commands/remote_page_test.go#L135)).
 
-Two things are still yours to check. A branch such as `main` can change after you read it, so share a pinned line. And a URL can name a look-alike owner, so check the owner before you run a line someone sent you.
+Two things are still yours to check. A page's name without a pin follows the repo's default branch, which can change after you read it, so share a pinned line. And a name can hold a look-alike owner, so check the owner before you run a line someone sent you.
 
 ## Why
 
@@ -51,7 +51,7 @@ So the workflow you repeat every week is easy to keep, rerun and share, and safe
 
 ## Install
 
-The apps need tinkerdown 0.8.1 or later:
+The apps need tinkerdown 0.9.1 or later:
 
 ```sh
 brew install livetemplate/tap/tinkerdown
@@ -63,36 +63,36 @@ go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest
 
 | App | What it does | Run it |
 |-----|--------------|--------|
-| [logs](logs/README.md) | Follows commands, containers and log files in one live timeline, with a tab per source, level and text filters, pause and clear. | `tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md --source 'api=docker logs -f api'` |
+| [logs](logs/README.md) | Follows commands, containers and log files in one live timeline, with a tab per source, level and text filters, pause and clear. | `tinkerdown serve --allow-exec github.com/livetemplate/onefile/logs -- docker logs -f api` |
 | [containers](containers/README.md) | Lists your Docker containers live, with start, stop, restart and kill buttons, and follows a container's logs when you click its name. | Takes its Docker commands as flags: copy the command from [its README](containers/README.md#run-it). |
 | [ci](ci/README.md) | Your GitHub Actions runs as a live list: watch a run's jobs finish, read why it failed, rerun the failed jobs or cancel. Reads `gh run list`. | Takes its `gh` commands as flags: copy the command from [its README](ci/README.md#run-it). |
-| [tests](tests/README.md) | Runs your tests on every save: one row per test, failures with their output, search by name. Reads `go test -json`. | `tinkerdown serve --allow-exec https://raw.githubusercontent.com/livetemplate/onefile/main/tests/index.md --source 'go=watchexec -e go -- go test -json ./...'` |
+| [tests](tests/README.md) | Runs your tests on every save: one row per test, failures with their output, search by name. Reads `go test -json`. | From your Go module: `tinkerdown serve --allow-exec github.com/livetemplate/onefile/tests -- watchexec -e go -- go test -json ./...` |
 | [http](http/README.md) | Lists the requests in your `.http` file, each with a Send button, and shows the response: status, headers, time, and the body indented when it's JSON. curl sends them. | Takes your `.http` file and a curl command as flags: copy the command from [its README](http/README.md#run-it). |
 
 The apps planned next, most needed first, are in [ROADMAP.md](ROADMAP.md).
 
-To run, build or remix an app with a coding agent, point it at [AGENTS.md](AGENTS.md).
+To see what an app takes, add `--help`: `tinkerdown serve github.com/livetemplate/onefile/http --help` lists its sources and actions. To run, build or remix an app with a coding agent, point it at [AGENTS.md](AGENTS.md).
 
 ## Share with your team
 
-Send the whole line, pinned. Run it once yourself; `serve` prints the pin:
+Send the whole line, pinned. Run it once yourself; `serve` prints the file the name stands for, and the pin:
 
 ```
-Fetched https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md (sha256 3f2a…). Pin it with …/logs/index.md#sha256=3f2a…
+Fetched github.com/livetemplate/onefile/logs (https://raw.githubusercontent.com/livetemplate/onefile/HEAD/logs/index.md) (sha256 3f2a…). Pin it with github.com/livetemplate/onefile/logs#sha256=3f2a…
 ```
 
-Put the pinned URL in the line you send. Your teammate sees every command it runs, and gets exactly the page you checked.
+Put the pinned name in the line you send. `@<commit>` after the name pins it too, as in `github.com/livetemplate/onefile/logs@30fc88d`. Your teammate sees every command it runs, and gets exactly the page you checked.
 
 ## Remix an app
 
 Copy an app's page, change it, and serve your copy:
 
 ```sh
-curl -O https://raw.githubusercontent.com/livetemplate/onefile/main/logs/index.md
-tinkerdown serve --allow-exec index.md --source 'api=docker logs -f api'
+curl -O https://raw.githubusercontent.com/livetemplate/onefile/HEAD/logs/index.md
+tinkerdown serve --allow-exec index.md -- docker logs -f api
 ```
 
-Keep the commands in flags, as the apps do, so your page stays safe to share. Push it to your own repo and share its raw URL the same way. An agent can do this for you from [AGENTS.md](AGENTS.md#remix-an-app).
+Keep the commands in flags, as the apps do, so your page stays safe to share. Push it to your own repo, as `<app>/index.md`, and share it the same way by its name: `github.com/you/repo/<app>`. An agent can do this for you from [AGENTS.md](AGENTS.md#remix-an-app).
 
 ## Add an app to onefile
 
