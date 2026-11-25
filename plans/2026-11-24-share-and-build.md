@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13), Phases 1 and 2 (#14), Phase 3 (tinkerdown#382, unreleased). Next: Phase 4.
+State — Done: plan (#13), Phases 1 and 2 (#14), Phase 3 (tinkerdown#382, unreleased). In review: Phase 4 (tinkerdown#384). Next: the release, then Phase 5.
 
 ## Context
 
@@ -262,7 +262,7 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 - Audit: A2, A3. Trace `ServeCommand`'s flag loop → `parsePageArg` → `addFlagSource` and `checkFlagSources`, and find where a page's frontmatter is first available. The audit found the page-flag contract's http example (`requests`) named the page's own merge. Asked which rule to use, the user dropped page flags: they add names without limit and confuse (2026-11-25).
 - Implementation: per the tinkerdown Phase 4 Files list. **User contribution:** `defaultLabel(cmd string) string` in `source_flags.go`, 5–10 lines. It picks the tab label for `docker logs -f api`, `tail -f /var/log/app.log` and `watchexec -e go -- go test -json ./...`. Decide which word wins, and what happens when none fits `sourceName`.
 - Acceptance: the plain-command criteria. Merge to main; it ships in the same release as Phase 3.
-- Learn:
+- Learn: `defaultLabel` takes the last plain word, with a path as its base name, and falls back to the first word cleaned, or `cmd` (user, 2026-11-25). `Page.Refs()` already listed a page's actions, so help reuses it instead of scanning buttons. A value starting with `=` is refused, since it most likely lost its name.
 
 ### Phase 5: switch the apps and docs over (onefile)
 
