@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13), Phases 1 and 2 (#14). In review: Phase 3 (tinkerdown#382). Next: Phase 4.
+State — Done: plan (#13), Phases 1 and 2 (#14), Phase 3 (tinkerdown#382, unreleased). Next: Phase 4.
 
 ## Context
 
