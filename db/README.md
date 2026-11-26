@@ -24,7 +24,7 @@ tinkerdown serve --allow-exec github.com/livetemplate/onefile/db \
   --source 'run=PGOPTIONS="-c default_transaction_read_only=on -c statement_timeout=30s" psql -X -v ON_ERROR_STOP=1 -c " $TD_sql"'
 ```
 
-Then open http://localhost:8080. It needs tinkerdown 0.10.0 or later, and sqlite3 3.37 or later for `-safe`.
+Then open http://localhost:8080. It needs tinkerdown 0.10.0 or later, and sqlite3 3.37 or later for `-safe`. The `sqlite3` macOS ships is new enough.
 
 | Flag | What it does |
 |------|--------------|
