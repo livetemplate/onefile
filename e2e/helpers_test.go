@@ -154,6 +154,19 @@ type browserLogs struct {
 	sent    []string
 }
 
+// failOnErrors fails t for each error or uncaught exception in the browser
+// console.
+func (l *browserLogs) failOnErrors(t *testing.T) {
+	t.Helper()
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for _, c := range l.console {
+		if strings.HasPrefix(c, "[error]") || strings.HasPrefix(c, "[exception]") {
+			t.Errorf("browser console: %s", c)
+		}
+	}
+}
+
 func (l *browserLogs) listen(ctx context.Context) {
 	chromedp.ListenTarget(ctx, func(ev interface{}) {
 		l.mu.Lock()

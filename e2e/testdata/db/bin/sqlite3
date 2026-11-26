@@ -1,0 +1,31 @@
+#!/bin/sh
+# A stand-in for sqlite3, first on PATH in TestDB. For each query in
+# ../queries.sql it prints what sqlite3 3.45.1 (Ubuntu 24.04) printed for it on
+# 2026-11-26, from ../out, with the same exit status.
+#
+# Each call appends its arguments to $OFE2E_DB_CALLS, each followed by a NUL,
+# and one more NUL ends the call, so the test can check the flags and the SQL.
+{ printf '%s\0' "$@"; printf '\0'; } >> "${OFE2E_DB_CALLS:?}"
+out=${0%/*}/../out
+
+# Like sqlite3, read every argument that starts with "-" as an option. A
+# query passed without a leading space, such as one that starts with a
+# "--" comment, fails here as it does there. The last other argument is the
+# SQL; the one before it is the database.
+for a; do
+	case $a in
+	-safe | -readonly | -box) ;;
+	-*) printf 'sqlite3: Error: unknown option: %s\nUse -help for a list of options.\n' "${a#-}" >&2; exit 1 ;;
+	*) sql=$a ;;
+	esac
+done
+
+case $sql in
+*"FROM users LIMIT 100"*) cat "$out/users.txt" ;;
+*"active = 1"*) cat "$out/active-users.txt" ;;
+*"GROUP BY day"*) cat "$out/orders-by-day.txt" ;;
+*"'Nobody'"*) ;;
+*"UPDATE orders"*) echo 'Error: stepping, attempt to write a readonly database (8)' >&2; exit 8 ;;
+*"orders AS c"*) sleep 60 ;;
+*) echo "fake sqlite3: no fixture for: $sql" >&2; exit 1 ;;
+esac
