@@ -68,6 +68,7 @@ go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest
 | [ci](ci/README.md) | Your GitHub Actions runs as a live list: watch a run's jobs finish, read why it failed, rerun the failed jobs or cancel. Reads `gh run list`. | Takes its `gh` commands as flags: copy the command from [its README](ci/README.md#run-it). |
 | [tests](tests/README.md) | Runs your tests on every save: one row per test, failures with their output, search by name. Reads `go test -json`. | From your Go module: `tinkerdown serve --allow-exec github.com/livetemplate/onefile/tests -- watchexec -e go -- go test -json ./...` |
 | [http](http/README.md) | Lists the requests in your `.http` file, each with a Send button, and shows the response: status, headers, time, and the body indented when it's JSON. curl sends them. | Takes your `.http` file and a curl command as flags: copy the command from [its README](http/README.md#run-it). |
+| [db](db/README.md) | Lists the queries in your `.sql` file, each with a Run button, and shows the result as `sqlite3` or `psql` prints it. Read-only unless you change the command. | Takes your `.sql` file and a `sqlite3` or `psql` command as flags: copy the command from [its README](db/README.md#run-it). |
 
 The apps planned next, most needed first, are in [ROADMAP.md](ROADMAP.md).
 

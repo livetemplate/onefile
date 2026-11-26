@@ -174,7 +174,7 @@ func TestHTTP(t *testing.T) {
 	}
 
 	if err := chromedp.Run(ctx, network.Enable(), chromedp.EmulateViewport(1280, 900), chromedp.Navigate(url),
-		chromedp.WaitVisible(`[data-testid="send-6"]`, chromedp.ByQuery)); err != nil {
+		chromedp.WaitVisible(`[data-testid="send-api/6"]`, chromedp.ByQuery)); err != nil {
 		dump()
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestHTTP(t *testing.T) {
 			t.Fatalf("urls = %q, want each as written", urls)
 		}
 		var sent string
-		run(chromedp.Evaluate(`document.querySelector('[data-testid="req-2"] .sent pre').textContent`, &sent))
+		run(chromedp.Evaluate(`document.querySelector('[data-testid="req-api/2"] .sent pre').textContent`, &sent))
 		if !strings.Contains(sent, "Authorization: Bearer {{token}}") || strings.Contains(sent, "a comment") {
 			dump()
 			t.Fatalf("request 2 shows %q; want the header as written, without the comment", sent)
@@ -205,7 +205,7 @@ func TestHTTP(t *testing.T) {
 	})
 
 	t.Run("Send on a POST shows the status, headers, time and indented JSON", func(t *testing.T) {
-		send(t, "2", api.URL+"/users")
+		send(t, "api/2", api.URL+"/users")
 		got := respText()
 		for _, want := range []string{"HTTP/1.1 201 Created", "Content-Type: application/json", "\"id\": 42,", "201 · 0.0"} {
 			if !strings.Contains(got, want) {
@@ -254,7 +254,7 @@ func TestHTTP(t *testing.T) {
 	})
 
 	t.Run("Send on a GET sends no body", func(t *testing.T) {
-		send(t, "1", api.URL+"/users")
+		send(t, "api/1", api.URL+"/users")
 		h := last("GET", "/users")
 		if h.body != "" || h.header.Get("Content-Length") != "" || h.header.Get("Accept") != "application/json" {
 			t.Fatalf("the GET arrived with body %q, Content-Length %q, Accept %q", h.body, h.header.Get("Content-Length"), h.header.Get("Accept"))
@@ -266,7 +266,7 @@ func TestHTTP(t *testing.T) {
 	})
 
 	t.Run("a 200 KiB minified JSON body arrives whole and indented", func(t *testing.T) {
-		send(t, "3", api.URL+"/big")
+		send(t, "api/3", api.URL+"/big")
 		got := respText()
 		if !strings.Contains(got, "\"n\": 3999,") || !strings.Contains(got, "\"last\": true") || strings.Count(got, "\n") < 4000 {
 			dump()
@@ -275,7 +275,7 @@ func TestHTTP(t *testing.T) {
 	})
 
 	t.Run("a redirect isn't followed", func(t *testing.T) {
-		send(t, "4", api.URL+"/redirect")
+		send(t, "api/4", api.URL+"/redirect")
 		if !strings.Contains(respText(), "HTTP/1.1 302 Found") || count("GET", "/target") != 0 {
 			dump()
 			t.Fatalf("the redirect target got %d requests, want 0", count("GET", "/target"))
@@ -284,7 +284,7 @@ func TestHTTP(t *testing.T) {
 
 	t.Run("an unset variable sends nothing and names it", func(t *testing.T) {
 		before := total()
-		if err := run(chromedp.Click(`[data-testid="send-5"]`, chromedp.ByQuery)); err != nil {
+		if err := run(chromedp.Click(`[data-testid="send-api/5"]`, chromedp.ByQuery)); err != nil {
 			t.Fatal(err)
 		}
 		waitJS(t, "the refusal", `(document.querySelector('[data-testid="resp-error"]')?.textContent || "").includes("unset variable nope")`)
@@ -295,7 +295,7 @@ func TestHTTP(t *testing.T) {
 	})
 
 	t.Run("a refused connection shows curl's error", func(t *testing.T) {
-		send(t, "6", "http://127.0.0.1:1/")
+		send(t, "api/6", "http://127.0.0.1:1/")
 		if got := respText(); !strings.Contains(got, "Failed to connect") || !strings.Contains(got, "0 · 0.0") {
 			dump()
 			t.Fatalf("the pane doesn't show curl's error:\n%s", got)
@@ -304,8 +304,8 @@ func TestHTTP(t *testing.T) {
 
 	t.Run("a hand-made click on an unlisted entry sends nothing", func(t *testing.T) {
 		before := total()
-		if err := run(chromedp.Evaluate(`document.querySelector('[data-testid="send-1"]').dataset.entry = "99"`, nil),
-			chromedp.Click(`[data-testid="send-1"]`, chromedp.ByQuery)); err != nil {
+		if err := run(chromedp.Evaluate(`document.querySelector('[data-testid="send-api/1"]').dataset.entry = "api/99"`, nil),
+			chromedp.Click(`[data-testid="send-api/1"]`, chromedp.ByQuery)); err != nil {
 			t.Fatal(err)
 		}
 		for deadline := time.Now().Add(10 * time.Second); !strings.Contains(serverLog.String(), "value entry is not listed"); time.Sleep(100 * time.Millisecond) {
@@ -321,8 +321,8 @@ func TestHTTP(t *testing.T) {
 
 	t.Run("a reload and Back send nothing more", func(t *testing.T) {
 		before := total()
-		if err := run(chromedp.Reload(), chromedp.WaitVisible(`[data-testid="send-6"]`, chromedp.ByQuery),
-			chromedp.Navigate("about:blank"), chromedp.NavigateBack(), chromedp.WaitVisible(`[data-testid="send-6"]`, chromedp.ByQuery)); err != nil {
+		if err := run(chromedp.Reload(), chromedp.WaitVisible(`[data-testid="send-api/6"]`, chromedp.ByQuery),
+			chromedp.Navigate("about:blank"), chromedp.NavigateBack(), chromedp.WaitVisible(`[data-testid="send-api/6"]`, chromedp.ByQuery)); err != nil {
 			dump()
 			t.Fatal(err)
 		}
@@ -347,25 +347,25 @@ func TestHTTP(t *testing.T) {
 	t.Run("editing the file updates the list", func(t *testing.T) {
 		writeFile(httpFile + "\n### Seventh\nDELETE {{host}}/users/1\n")
 		start := time.Now()
-		waitJS(t, "a seventh request", `!!document.querySelector('[data-testid="send-7"]')`)
+		waitJS(t, "a seventh request", `!!document.querySelector('[data-testid="send-api/7"]')`)
 		if d := time.Since(start); d > 2*time.Second {
 			t.Errorf("the new request took %v to show", d)
 		}
 		writeFile(httpFile + "\n### Broken\nGET http://x\nnot a header\n")
 		waitJS(t, "the parse error", `/line \d+:/.test(document.querySelector('[data-testid="error"]')?.textContent || "")`)
-		if err := run(chromedp.WaitVisible(`[data-testid="send-7"]`, chromedp.ByQuery)); err != nil {
+		if err := run(chromedp.WaitVisible(`[data-testid="send-api/7"]`, chromedp.ByQuery)); err != nil {
 			dump()
 			t.Fatal("a parse error dropped the last good list")
 		}
 		writeFile(httpFile)
-		waitJS(t, "six requests and no error", `!document.querySelector('[data-testid="send-7"]') && !document.querySelector('[data-testid="error"]') && !!document.querySelector('[data-testid="send-6"]')`)
+		waitJS(t, "six requests and no error", `!document.querySelector('[data-testid="send-api/7"]') && !document.querySelector('[data-testid="error"]') && !!document.querySelector('[data-testid="send-api/6"]')`)
 	})
 
 	t.Run("on a phone no cell leaves its row", func(t *testing.T) {
 		if err := run(chromedp.EmulateViewport(390, 844, chromedp.EmulateScale(2), chromedp.EmulateMobile)); err != nil {
 			t.Fatal(err)
 		}
-		send(t, "2", api.URL+"/users")
+		send(t, "api/2", api.URL+"/users")
 		var outside []string
 		run(chromedp.Evaluate(`[...document.querySelectorAll(".reqs li, .body li")].flatMap(li => { const r = li.getBoundingClientRect();
 			return [...li.children].filter(c => c.offsetParent).filter(c => { const b = c.getBoundingClientRect();
@@ -393,6 +393,23 @@ func TestHTTP(t *testing.T) {
 		}
 	})
 
+	t.Run("with a second .http file, Send sends the clicked file's request", func(t *testing.T) {
+		if err := os.WriteFile(filepath.Join(dir, "other.http"), []byte("@host = "+api.URL+"\n\n### Other\nGET {{host}}/other\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		url2, _ := serveREADME(readmeCommandOf(t, "../http/README.md") + " --source http:./other.http")
+		if err := run(chromedp.Navigate(url2), chromedp.WaitVisible(`[data-testid="send-other/1"]`, chromedp.ByQuery)); err != nil {
+			dump()
+			t.Fatal(err)
+		}
+		before := count("GET", "/users")
+		send(t, "other/1", api.URL+"/other")
+		send(t, "api/1", api.URL+"/users")
+		if count("GET", "/other") != 1 || count("GET", "/users") != before+1 {
+			t.Fatalf("GET /other %d times, want 1; GET /users %d more times, want 1", count("GET", "/other"), count("GET", "/users")-before)
+		}
+	})
+
 	t.Run("the README's --config form lists the same requests and sends the same POST", func(t *testing.T) {
 		readme, err := os.ReadFile("../http/README.md")
 		if err != nil {
@@ -407,22 +424,16 @@ func TestHTTP(t *testing.T) {
 			t.Fatal(err)
 		}
 		url2, _ := serveREADME(cmds[1])
-		if err := run(chromedp.Navigate(url2), chromedp.WaitVisible(`[data-testid="send-6"]`, chromedp.ByQuery)); err != nil {
+		if err := run(chromedp.Navigate(url2), chromedp.WaitVisible(`[data-testid="send-api/6"]`, chromedp.ByQuery)); err != nil {
 			dump()
 			t.Fatal(err)
 		}
 		before := count("POST", "/users")
-		send(t, "2", api.URL+"/users")
+		send(t, "api/2", api.URL+"/users")
 		if n := count("POST", "/users"); n != before+1 || last("POST", "/users").header.Get("Authorization") != "Bearer "+token {
 			t.Fatalf("the --config form sent %d POSTs, want 1, with the token", n-before)
 		}
 	})
 
-	logs.mu.Lock()
-	defer logs.mu.Unlock()
-	for _, c := range logs.console {
-		if strings.HasPrefix(c, "[error]") || strings.HasPrefix(c, "[exception]") {
-			t.Errorf("browser console: %s", c)
-		}
-	}
+	logs.failOnErrors(t)
 }

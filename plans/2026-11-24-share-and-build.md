@@ -1,6 +1,6 @@
 # Plan: say what onefile is for, make new apps easy to build, and run and share them with plain commands
 
-State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0), A4's fix (tinkerdown#387, released in v0.9.1). Phase 5 (#15). Next: Phase 6, once [db's plan](2026-11-25-db.md) is signed off.
+State — Done: plan (#13), Phases 1 and 2 (#14), Phases 3 and 4 (tinkerdown#382, #384, released in v0.9.0), A4's fix (tinkerdown#387, released in v0.9.1). Phase 5 (#15). Phase 6 in the db PR. Next: its sign-off.
 
 ## Context
 
@@ -185,7 +185,7 @@ tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
 | A1 | assumption | `raw.githubusercontent.com` serves a tag in place of `<ref>` as it does a branch and a short commit. | low | verified 2026-11-24: `HEAD`, a tag, a short commit and a branch all return 200 |
 | A2 | assumption | `serve` can load the page before it resolves page flags: a page from a URL is fetched, and a local page parsed, before sources are checked. | medium | verified 2026-11-25: flag sources are only read after `Discover()`; moot now that page flags are dropped |
 | A3 | assumption | No published app README or test passes a flag that `serve` ignores today, so refusing unknown flags breaks none of them. | medium | failed 2026-11-25: onefile is clean, but tinkerdown's guides document `--debug`, `--verbose`, `--production`, `--log-format` and `--correlation-ids`, which nothing reads. Phase 4 fixes those guides |
-| R1 | risk | The fresh agent still can't build db after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | open (Phase 6) |
+| R1 | risk | The fresh agent still can't build db after two rounds of guide edits. Then the patterns, not the guide, are too hard, and we'd record which pattern and file a tinkerdown issue for it rather than grow the guide. | medium | closed 2026-11-26: the agent built db on the first round. |
 | R2 | risk | Raw GitHub caches a branch for about five minutes, so a teammate can get an older page right after a push. Mitigation: shared lines use `@<commit>`. | low | accepted |
 | A4 | assumption | A fetched page's commands run where `serve` runs, as its `file:` paths resolve. | high | failed 2026-11-25: they ran in the page's temp directory, so `-- go test -json ./...` found no module. Fixed in tinkerdown#387 for v0.9.1 (user, 2026-11-25), which becomes the apps' minimum |
 | G1 | gap | Hosts other than github.com. | low | unowned |
@@ -214,7 +214,7 @@ tinkerdown (Phase 4, worktree `.worktrees/page-flags`):
 - [ ] tinkerdown's full suite (`go test -timeout 40m ./...`) and pre-commit pass.
 - [ ] `cd e2e && go test ./...` in onefile passes with each app's new README command, after Phase 5. The tests swap the short name for a local `httptest` URL as they swap the raw URL today, so they stay offline. The expansion itself is covered by tinkerdown's unit tests, and the real fetch by the manual run.
 - [ ] One manual run of each changed README command from GitHub by its short name, recorded in Results.
-- [ ] A fresh subagent, given only `AGENTS.md` and db's approved plan, builds a db page that passes `cd e2e && go test -run TestDB ./...`. Where it got stuck, and how many tries it took, are in Results.
+- [x] A fresh subagent, given only `AGENTS.md` and db's approved plan, builds a db page that passes `cd e2e && go test -run TestDB ./...`. Where it got stuck, and how many tries it took, are in Results. ✅ (`TestDB`, on the agent's page unchanged)
 - [ ] `grep -rn 'raw.githubusercontent' README.md AGENTS.md */README.md` finds only the "what a short name expands to" line and the remix step's `curl` copy after Phase 5.
 - [ ] Each safety guarantee in the README links to the tinkerdown code or test that enforces it (`checkRemotePage` and its tests, the `--host` default, the `#sha256=` check), and each link opens.
 - [ ] `prereview check` passes on every changed doc.
@@ -278,7 +278,7 @@ REF   = [A-Za-z0-9._-]+, not starting with "." or "-", no ".."   (default HEAD)
 - Starts after db's plan is approved. It can run before or after Phases 3–5.
 - Implementation: a fresh subagent builds db from `AGENTS.md` and db's plan. Guide fixes go in the db PR.
 - Acceptance: the db criterion.
-- Learn:
+- Learn: the agent served the page three times before every journey worked, and the guide's version (0.9.1) cost it the most: its links led to docs without `sql:`. The guide claimed nothing false, but left out what a new pattern needs. A review then found that the guide fix the agent's workaround suggested, "a page can't scroll", was false, so a guide fix needs the same check as code.
 
 ## Results
 
@@ -291,4 +291,4 @@ Phase 5's manual run, 2026-11-25. Each changed README command ran with tinkerdow
 
 No console errors in any of them.
 
-<!-- Phase 6 adds the db build by a fresh agent. -->
+Phase 6's build, 2026-11-26: a fresh agent built db from AGENTS.md and [db's plan](2026-11-25-db.md) alone, and the page passed `TestDB` unchanged. Where it got stuck, and each guide fix, are in [db's Results](2026-11-25-db.md#results).

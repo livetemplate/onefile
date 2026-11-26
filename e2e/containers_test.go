@@ -282,11 +282,5 @@ func TestContainers(t *testing.T) {
 		shotPNG(t, run, "containers-phone")
 	})
 
-	logs.mu.Lock()
-	defer logs.mu.Unlock()
-	for _, c := range logs.console {
-		if strings.HasPrefix(c, "[error]") || strings.HasPrefix(c, "[exception]") {
-			t.Errorf("browser console: %s", c)
-		}
-	}
+	logs.failOnErrors(t)
 }
