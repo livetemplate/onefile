@@ -205,15 +205,17 @@ func shotPNG(t *testing.T, run func(...chromedp.Action) error, name string) {
 }
 
 // readmeCommandOf returns the serve command in the README at path: the first
-// sh block that runs tinkerdown serve, joined into one line.
+// sh block that runs tinkerdown serve, possibly after VAR=value assignments,
+// joined into one line.
 func readmeCommandOf(t *testing.T, path string) string {
 	t.Helper()
 	readme, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
+	serveLine := regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_]*=\S* )*tinkerdown serve`)
 	for _, m := range regexp.MustCompile("(?s)```sh\n(.*?)```").FindAllStringSubmatch(string(readme), -1) {
-		if strings.HasPrefix(m[1], "tinkerdown serve") {
+		if serveLine.MatchString(m[1]) {
 			return strings.ReplaceAll(strings.TrimSpace(m[1]), "\\\n", "")
 		}
 	}
