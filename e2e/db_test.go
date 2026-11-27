@@ -318,7 +318,7 @@ func TestDB(t *testing.T) {
 			t.Fatal(err)
 		}
 		// A params merge's commands run on for 30 s after the last page
-		// showing them leaves (tinkerdown's MergeParamIdle), so allow 45.
+		// showing them leaves (tinkerdown's MergeIdle), so allow 45.
 		waitFor(t, "every sqlite3 the page started to exit", 45*time.Second, func() bool { return !running() })
 	})
 
