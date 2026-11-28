@@ -36,7 +36,7 @@ Then open http://localhost:8080. It needs tinkerdown 0.11.0 or later and git 2.2
 
 Each source and action keeps its name, since the page reads them by name.
 
-The lists run again every 2 seconds and after each click. To run them when a file changes instead, add `--watch-dir .` after `serve`. It doesn't suit a network file system, which can miss changes. On macOS each watched file holds an open file, so a repo of tens of thousands of files can reach the limit. The page then keeps its 2-second timer, and the server log says why.
+The lists run again every 2 seconds and after each click. To run them when a file changes instead, add `--watch-dir .` after `serve`. It doesn't suit a network file system, which can miss changes. On macOS each watched file and folder holds an open file, and a process may hold 10,240, so a repo of more than about 10,000 can't be watched. The page then keeps its 2-second timer, and the server log says why. On macOS this needs tinkerdown 0.11.1 or later: 0.11.0 kept the files open, so the page's commands failed.
 
 ## Use it
 
