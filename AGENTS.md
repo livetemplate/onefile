@@ -1,6 +1,6 @@
 # onefile for agents
 
-Each app here is one [tinkerdown](https://github.com/livetemplate/tinkerdown) page, `<app>/index.md`. The page holds no commands: the user passes them as flags when they serve it. This guide covers the three jobs a user may ask for: [run an app](#run-an-app), [build an app](#build-an-app) and [remix an app](#remix-an-app). It's written for tinkerdown 0.10.0.
+Each app here is one [tinkerdown](https://github.com/livetemplate/tinkerdown) page, `<app>/index.md`. The page holds no commands: the user passes them as flags when they serve it. This guide covers the three jobs a user may ask for: [run an app](#run-an-app), [build an app](#build-an-app) and [remix an app](#remix-an-app). It's written for tinkerdown 0.11.0.
 
 ## Run an app
 
@@ -10,7 +10,7 @@ Each app here is one [tinkerdown](https://github.com/livetemplate/tinkerdown) pa
 brew install livetemplate/tap/tinkerdown
 ```
 
-Or, with Go 1.26 or later: `go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest`. The apps need tinkerdown 0.10.0 or later; check with `tinkerdown version`.
+Or, with Go 1.26 or later: `go install github.com/livetemplate/tinkerdown/cmd/tinkerdown@latest`. The apps need tinkerdown 0.11.0 or later; check with `tinkerdown version`.
 
 ### 2. Read the app's README
 
@@ -42,7 +42,7 @@ Commands run in the directory you run `serve` in. Leave out `--allow-exec` when 
 
 ## Build an app
 
-A page is built from these parts. `serve` refuses a page from a URL that holds a source other than `merge`, an action, a `<script>`, an event handler and more ([the full list](https://github.com/livetemplate/tinkerdown/blob/v0.10.0/docs/reference/cli.md#pages-from-a-url)):
+A page is built from these parts. `serve` refuses a page from a URL that holds a source other than `merge`, an action that does more than check values, a `<script>`, an event handler and more ([the full list](https://github.com/livetemplate/tinkerdown/blob/v0.11.0/docs/reference/cli.md#pages-from-a-url)):
 
 - **Frontmatter** with a `title` and `sources`. Every source is a `merge`, and its inputs come from the user's flags.
 - **A tabs heading** (optional), which filters the block below it.
@@ -73,15 +73,18 @@ Because a page built from these parts holds no commands, it can be served from i
 | More about the row you clicked | a second merge with `params`, and rows that link to `?name={{.fields.name}}` | either | [containers](containers/index.md) (logs pane), [ci](ci/index.md) (jobs) |
 | A button that changes something | `<button name="stop" data-name="…">` and the user's `--action 'stop=…'` | | [containers](containers/index.md), [ci](ci/index.md) |
 | A button whose output the page shows | a merge with `params` and `on: send` | `{{.seq}}` | [http](http/index.md) |
+| A list a command prints again, kept current | `every: 2s`, `pattern` with named groups for a plain line, `key` | `{{.key}}` | [git](git/index.md) |
+| A button whose value must be in a row | an action that sets only `values: {path: {in: files.fields.path}}`, and the user's `--action` | | [git](git/index.md) |
+| Text the user types for a command | a merge with `on: commit` and `params: {message: {typed: true}}`, and a `<form>` around the box and the button | `{{.seq}}` | [git](git/index.md) |
 | A list a file feeds, with a button that runs one | `accepts.kinds: [sql]` or `[http]`, `key: [fields.entry]`, and a second merge with `params` and `on: execute` | `{{.key}}` in the list, `{{.seq}}` in the output | [db](db/index.md), [http](http/index.md) |
 
-The settings are in [stream and merge sources](https://github.com/livetemplate/tinkerdown/blob/v0.10.0/docs/sources/stream.md). Tabs and the `Filter` form are in [filtering](https://github.com/livetemplate/tinkerdown/blob/v0.10.0/docs/guides/data-sources.md#filtering), and `linkify` and `jsonindent` are in [template functions](https://github.com/livetemplate/tinkerdown/blob/v0.10.0/docs/guides/go-templates.md#template-functions).
+The settings are in [stream and merge sources](https://github.com/livetemplate/tinkerdown/blob/v0.11.0/docs/sources/stream.md). Tabs and the `Filter` form are in [filtering](https://github.com/livetemplate/tinkerdown/blob/v0.11.0/docs/guides/data-sources.md#filtering), and `linkify` and `jsonindent` are in [template functions](https://github.com/livetemplate/tinkerdown/blob/v0.11.0/docs/guides/go-templates.md#template-functions).
 
 A block can read these values:
 
 | Value | Holds |
 |-------|-------|
-| `.Data` | the rows, each with `seq`, `source`, `stream`, `time`, `level`, `msg`, `line` and `fields` ([row fields](https://github.com/livetemplate/tinkerdown/blob/v0.10.0/docs/sources/stream.md#row-fields)), plus `key` and `collected` on a keyed merge |
+| `.Data` | the rows, each with `seq`, `source`, `stream`, `time`, `level`, `msg`, `line` and `fields` ([row fields](https://github.com/livetemplate/tinkerdown/blob/v0.11.0/docs/sources/stream.md#row-fields)), plus `key` and `collected` on a keyed merge |
 | `.Error` | the block's last error, such as a refused value |
 | `.Inputs`, `.Accepts.Hint` | the sources the user passed, and the page's hint |
 | `.Params` | a `params` merge's values, empty until all are valid |
@@ -94,7 +97,7 @@ A block can read these values:
 - **Commands come from the user.** The page declares only `merge` sources. Every command comes from the command after `--` and the user's `--source` and `--action` flags, as the README writes them. When the commands are long, the README also gives them as a `--config` file of the user's own, which a page from a URL reads too ([http](http/README.md)).
 - **Tools already on the machine.** Commands use what's already installed, such as `sh`, `curl` and `awk`, or the service's own CLI (`docker`, `gh`, `kubectl`). A tool the user must install for this page alone doesn't qualify.
 - **Clicks, not links, run commands with side effects.** Reloads, Back and shared links replay a URL, so a URL never starts a command that changes anything.
-- **Quote and check values.** Every documented command quotes its values (`"$TD_name"`). Before calling the tool, an action command checks its values with `case` patterns, since an action has no `in` check ([tinkerdown#362](https://github.com/livetemplate/tinkerdown/issues/362)). ci's `rerun` in [its README](ci/README.md#run-it) is an example.
+- **Quote and check values.** Every documented command quotes its values (`"$TD_name"`). When a button's value comes from a row, the page checks it with an action that sets only `values`, as git's `stage` does. A value no row lists needs `case` patterns in the command instead, as ci's `rerun` has in [its README](ci/README.md#run-it).
 
 ### Pitfalls
 
@@ -110,6 +113,7 @@ A block can read these values:
 - A value passed as an argument can be read as an option when it starts with `-`, or as the tool's own command: `psql -c '\! rm …'` runs a shell. Put it after `--` when every version of the tool takes `--`. When the tool ignores leading spaces, as SQL does, a leading space works on every version (`" $TD_sql"`, [db](plans/2026-11-25-db.md), Phase 2). A space would change a path or a name.
 - An `on:` merge's block sees only `.Params`, not the clicked row, so its pane can name the row's entry but not the row's other fields. To keep that pane in view on a phone, below a long list, db makes it `position: sticky; bottom: 0` ([db](db/index.md)).
 - A `<` inside the `<style>` element, as in `@media (width < 1000px)`, gets a page from a URL refused as markup inside a raw-text element. Write `max-width` and `min-width` instead ([db](plans/2026-11-25-db.md), Phase 2).
+- A row's link isn't escaped as a URL, so a path holding `&` or `#` would open the wrong row. Write `?path={{urlquery .fields.path}}` ([git](plans/2026-11-27-git.md), Phase 3).
 - tinkerdown's docs have listed flags and functions that don't exist ([log-fields](plans/2026-11-22-log-fields.md), Phase 2). Check a docs page against the code before relying on it.
 
 ## Remix an app
